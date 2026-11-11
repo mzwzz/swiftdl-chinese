@@ -77,7 +77,7 @@
       .msg { padding: 10px 8px 12px; font-size: 12.5px; color: #a4a8b1; line-height: 1.5; }
       .msg.ok { color: #4cb782; } .msg.err { color: #eb6b6b; }
     </style>
-    <div class="wrap"><button class="btn" title="Download with SwiftDL">${LOGO}<span>Download video</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></button><div class="panel"></div></div>`;
+    <div class="wrap"><button class="btn" title="用 SwiftDL 下载">${LOGO}<span>下载视频</span><svg class="chev" width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg></button><div class="panel"></div></div>`;
     wrap = root.querySelector(".wrap");
     btn = root.querySelector(".btn");
     panel = root.querySelector(".panel");
@@ -175,7 +175,7 @@
     if (hls?.qualities?.length) { qualityMenu(hls.url, title(), hls.qualities); return; }
     if (hls && (await streamMenu(hls.url))) return;
     if (onVideoSite()) return grab(location.href, title());
-    panel.innerHTML = `<div class="msg">Looking for downloadable files…</div>`;
+    panel.innerHTML = `<div class="msg">正在寻找可下载的文件…</div>`;
     const items = [...(res?.items || [])];
     const src = video?.currentSrc;
     if (src && /^https?:/i.test(src) && !items.some((m) => m.url === src)) items.unshift({ url: src, kind: "file", mime: "video/mp4", size: 0 });
@@ -186,17 +186,17 @@
     const name = title();
     let html = "";
     if (files.length) {
-      html += `<div class="head">Video and audio on this page</div>`;
+      html += `<div class="head">本页的视频和音频</div>`;
       html += files.map((m) => {
         const ext = extOf(m.url, m.mime || "");
-        const kind = /^audio/.test(m.mime) || /mp3|m4a|aac|ogg|opus|flac|wav/.test(ext) ? "Audio" : "Video";
+        const kind = /^audio/.test(m.mime) || /mp3|m4a|aac|ogg|opus|flac|wav/.test(ext) ? "音频" : "视频";
         return `<button class="item" data-url="${encodeURI(m.url).replace(/"/g, "%22")}" data-name="${name.replace(/"/g, "'")}.${ext}"><span class="tag">${ext.toUpperCase()}</span><span class="meta"><b>${kind}${m.size ? ` · ${bytes(m.size)}` : ""}</b><span>${new URL(m.url).hostname}</span></span></button>`;
       }).join("");
     }
     if (stream) {
-      html += `<div class="head">Stream</div><button class="item" data-url="${encodeURI(stream.url).replace(/"/g, "%22")}" data-name="${name.replace(/"/g, "'")}.mp4"><span class="tag stream">${stream.kind.toUpperCase()}</span><span class="meta"><b>This video</b><span>Choose the quality in SwiftDL</span></span></button>`;
+      html += `<div class="head">流媒体</div><button class="item" data-url="${encodeURI(stream.url).replace(/"/g, "%22")}" data-name="${name.replace(/"/g, "'")}.mp4"><span class="tag stream">${stream.kind.toUpperCase()}</span><span class="meta"><b>此视频</b><span>画质在 SwiftDL 中选择</span></span></button>`;
     }
-    if (!files.length && !stream) html = `<div class="msg">No downloadable file found yet. Play the video for a moment, then try again.</div>`;
+    if (!files.length && !stream) html = `<div class="msg">还没找到可下载的文件。先播放一小会儿视频，再试一次。</div>`;
     panel.innerHTML = html;
   }
 
@@ -205,9 +205,9 @@
   // already open until they're reloaded.
   function failure(error) {
     const text = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
-    if (/context invalidated|receiving end does not exist/i.test(error) || !chrome.runtime?.id) return "SwiftDL's extension was updated. Reload this page and try again.";
-    if (/host not found|not allowed/i.test(error)) return "SwiftDL isn't set up in this browser yet. Open the SwiftDL app once, then try again.";
-    return `SwiftDL couldn't take this download: ${text(error) || "no answer from the app"}.`;
+    if (/context invalidated|receiving end does not exist/i.test(error) || !chrome.runtime?.id) return "SwiftDL 扩展已更新，请刷新本页后重试。";
+    if (/host not found|not allowed/i.test(error)) return "此浏览器还没配置 SwiftDL。先打开一次 SwiftDL 应用，再重试。";
+    return `SwiftDL 无法接管此下载：${text(error) || "应用没有响应"}。`;
   }
 
   // ---------- YouTube: qualities straight from the page ----------
@@ -236,7 +236,7 @@
         size: best.size ? best.size + audioSize : null,
       };
     });
-    if (audios.length) list.push({ label: "Audio only", format: "ba[ext=m4a]/ba", ext: m4a.length ? "m4a" : "webm", size: audioSize || null });
+    if (audios.length) list.push({ label: "仅音频", format: "ba[ext=m4a]/ba", ext: m4a.length ? "m4a" : "webm", size: audioSize || null });
     return list;
   }
   async function youtubeMenu() {
@@ -255,7 +255,7 @@
 
   function qualityMenu(url, name, qualities) {
     const row = (q, i) => `<button class="qrow" data-q="${i}"><span>${q.label}</span><span class="sz">${q.size ? bytes(q.size) : ""}</span></button>`;
-    const audio = qualities.findIndex((q) => q.label === "Audio only");
+    const audio = qualities.findIndex((q) => q.label === "仅音频");
     panel.classList.add("q");
     panel.innerHTML = qualities.map((q, i) => (i === audio ? `<div class="qsep"></div>` : "") + row(q, i)).join("");
     panel.querySelectorAll("[data-q]").forEach((b) => b.addEventListener("click", (e) => {
@@ -265,7 +265,7 @@
     }));
   }
   async function streamMenu(url) {
-    panel.innerHTML = `<div class="msg">Reading qualities…</div>`;
+    panel.innerHTML = `<div class="msg">正在读取画质…</div>`;
     let res;
     try { res = await chrome.runtime.sendMessage({ type: "streamQualities", url }); } catch { res = null; }
     if (!res?.qualities?.length) return false;
@@ -275,10 +275,10 @@
 
   async function grab(url, filename, extra = {}) {
     panel.classList.remove("q");
-    panel.innerHTML = `<div class="msg">Sending to SwiftDL…</div>`;
+    panel.innerHTML = `<div class="msg">正在发送到 SwiftDL…</div>`;
     let res;
     try { res = await chrome.runtime.sendMessage({ type: "grab", url: decodeURI(url), filename, ...extra }); } catch (e) { res = { ok: false, error: String(e?.message || e) }; }
-    panel.innerHTML = res?.ok ? `<div class="msg ok">Sent to SwiftDL ✓</div>` : `<div class="msg err">${failure(res?.error || "")}</div>`;
+    panel.innerHTML = res?.ok ? `<div class="msg ok">已发送到 SwiftDL ✓</div>` : `<div class="msg err">${failure(res?.error || "")}</div>`;
     setTimeout(() => { setOpen(false); scheduleHide(); }, 1800);
   }
 

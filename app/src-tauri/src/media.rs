@@ -98,7 +98,7 @@ async fn ensure_tools(client: &Client, note: &Note, need_ffmpeg: bool) -> Result
     let ytdlp = ytdlp_path();
     if !ytdlp.exists() {
         let url = format!("https://github.com/yt-dlp/yt-dlp/releases/latest/download/{}", ytdlp_asset());
-        fetch(client, &url, &ytdlp, note, "Getting yt-dlp").await.context("couldn't download yt-dlp")?;
+        fetch(client, &url, &ytdlp, note, "正在获取 yt-dlp").await.context("couldn't download yt-dlp")?;
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
@@ -113,8 +113,8 @@ async fn ensure_tools(client: &Client, note: &Note, need_ffmpeg: bool) -> Result
         crate::log::line(&format!("ffmpeg not found ({}: {:?}), downloading it", own.display(), std::fs::metadata(&own).err()));
         let zip = tools_dir().join("ffmpeg.zip");
         let url = "https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip";
-        fetch(client, url, &zip, note, "Getting ffmpeg").await.context("couldn't download ffmpeg")?;
-        set_note(note, "Unpacking ffmpeg");
+        fetch(client, url, &zip, note, "正在获取 ffmpeg").await.context("couldn't download ffmpeg")?;
+        set_note(note, "正在解压 ffmpeg");
         let unpacked = unpack_ffmpeg(&zip, &tools_dir().join("ffmpeg"));
         let _ = std::fs::remove_file(&zip);
         unpacked.context("couldn't unpack ffmpeg")?;
@@ -378,7 +378,7 @@ async fn ytdlp_json(ytdlp: PathBuf, url: String, headers: Vec<(String, String)>,
             if start.elapsed() > PROBE_LIMIT {
                 let _ = child.kill();
                 let _ = child.wait();
-                bail!("The site didn't answer in {} seconds. Check your connection and try again.", PROBE_LIMIT.as_secs());
+                bail!("网站 {} 秒内没有响应，请检查网络后重试。", PROBE_LIMIT.as_secs());
             }
             std::thread::sleep(Duration::from_millis(100));
         };
@@ -528,14 +528,14 @@ fn qualities(info: &Value) -> Vec<Quality> {
     if let Some(a) = best_audio {
         let m4a = audios.iter().any(|f| f["ext"].as_str() == Some("m4a"));
         list.push(Quality {
-            label: "Audio only".into(),
+            label: "仅音频".into(),
             format: "ba[ext=m4a]/ba".into(),
             ext: if m4a { "m4a".into() } else { a["ext"].as_str().unwrap_or("m4a").into() },
             size: if m4a { audios.iter().filter(|f| f["ext"].as_str() == Some("m4a")).filter_map(|f| size_of(f)).max() } else { size_of(a) },
         });
     }
     if list.is_empty() {
-        list.push(Quality { label: "Best quality".into(), format: "bv*+ba/b".into(), ext: info["ext"].as_str().unwrap_or("mp4").into(), size: None });
+        list.push(Quality { label: "最高画质".into(), format: "bv*+ba/b".into(), ext: info["ext"].as_str().unwrap_or("mp4").into(), size: None });
     }
     list
 }
@@ -543,17 +543,17 @@ fn qualities(info: &Value) -> Vec<Quality> {
 fn last_error(stderr: &str) -> Option<String> {
     let e = stderr.lines().rev().find_map(|l| l.strip_prefix("ERROR: ")).map(|e| e.trim().to_string())?;
     if e.contains("Requested format is not available") && js_runtime().is_none() {
-        return Some("This site needs a JavaScript runtime for yt-dlp. Install Node.js or Deno, then try again.".into());
+        return Some("该网站需要 JavaScript 运行时才能使用 yt-dlp。请安装 Node.js 或 Deno 后重试。".into());
     }
     // A stream address the site no longer serves: links like these expire, or
     // work once, and "generic" is yt-dlp's name for a plain address.
     if e.contains("[generic]") && (e.contains("HTTP Error 404") || e.contains("HTTP Error 403") || e.contains("HTTP Error 410")) {
-        return Some("The site no longer gives out this stream link. Such links can expire or work only once: play the video again in the browser, then use SwiftDL on it.".into());
+        return Some("该网站不再提供这条视频流链接。这类链接会过期或只能使用一次：请先在浏览器里重新播放视频，再用 SwiftDL 下载。".into());
     }
     // yt-dlp's advice names its own flags, which mean nothing here.
     let lower = e.to_lowercase();
     if lower.contains("--cookies") || lower.contains("logged-in") || lower.contains("authentication is required") || lower.contains("login required") {
-        return Some("This site needs you to be signed in. Download it with the SwiftDL extension in a browser where you're signed in, so your session is passed on.".into());
+        return Some("该网站要求先登录。请在已登录的浏览器里用 SwiftDL 扩展下载，以便带上你的会话。".into());
     }
     Some(e)
 }
@@ -577,7 +577,7 @@ pub async fn run(client: &Client, job: Job, progress: Arc<Progress>, note: Note,
     let merges = job.format.contains('+') || stream;
     let tools = ensure_tools(client, &note, merges).await?;
     if merges && tools.ffmpeg.is_none() {
-        bail!("Joining video and audio needs ffmpeg. Install it (brew install ffmpeg, or sudo apt install ffmpeg) and try again.");
+        bail!("合并视频和音频需要 ffmpeg。请先安装（brew install ffmpeg 或 sudo apt install ffmpeg）再重试。");
     }
     if cancel.is_cancelled() {
         return Ok(Outcome::Paused);
@@ -660,7 +660,7 @@ async fn direct(client: &Client, job: &Job, progress: &Arc<Progress>, note: &Not
     }
     // Not looked up yet (a pasted link, say): do it now, then download directly.
     if wait_for_lookup(&job.url).await.is_none() {
-        set_note(note, "Getting video details");
+        set_note(note, "正在获取视频信息");
         prepare(client, &job.url, job.headers.clone()).await;
     }
     let Some(saved) = wait_for_lookup(&job.url).await else { return Ok(None) };
@@ -713,12 +713,12 @@ async fn direct(client: &Client, job: &Job, progress: &Arc<Progress>, note: &Not
     }
 
     let fetched = started.elapsed();
-    set_note(note, "Joining video and audio");
+    set_note(note, "正在合并视频和音频");
     let files: Vec<PathBuf> = parts.iter().map(|(_, p)| p.clone()).collect();
     if files.len() == 1 {
         std::fs::rename(&files[0], &job.dest)?;
     } else {
-        let ff = ffmpeg_path().context("Joining video and audio needs ffmpeg.")?;
+        let ff = ffmpeg_path().context("合并视频和音频需要 ffmpeg。")?;
         let (files2, dest) = (files.clone(), job.dest.clone());
         let out = tauri::async_runtime::spawn_blocking(move || {
             let mut cmd = command(&ff);
@@ -855,10 +855,10 @@ fn read_progress(stdout: impl std::io::Read, progress: &Progress, note: &Note) {
             progress.downloaded.store(base + cur, Ordering::Relaxed);
             progress.total.store(hint.max(base + cur_total), Ordering::Relaxed);
         } else if line.starts_with("[Merger]") || line.starts_with("[VideoRemuxer]") {
-            set_note(note, "Merging video and audio");
+            set_note(note, "正在合并视频和音频");
             progress.connections.store(0, Ordering::Relaxed);
         } else if line.starts_with("[Fixup") || line.starts_with("[ExtractAudio]") {
-            set_note(note, "Finishing");
+            set_note(note, "正在收尾");
         }
     }
 }
@@ -959,7 +959,7 @@ mod tests {
         read_progress(out.as_bytes(), &progress, &note);
         assert_eq!(progress.downloaded.load(Ordering::Relaxed), 15298808 + 10202210);
         assert_eq!(progress.total.load(Ordering::Relaxed), 15298808 + 10202210);
-        assert_eq!(note.lock().unwrap().as_deref(), Some("Merging video and audio"));
+        assert_eq!(note.lock().unwrap().as_deref(), Some("正在合并视频和音频"));
     }
 }
 

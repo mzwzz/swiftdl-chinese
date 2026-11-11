@@ -11,48 +11,47 @@
     <aside class="sidebar">
       <div class="side-top" data-tauri-drag-region>
         <div class="brand" data-tauri-drag-region><img src="logo.svg" alt="" width="20" height="20"><span>SwiftDL</span></div>
-        <button class="sq-btn" id="btn-palette" title="Search and commands (Ctrl K)"><i data-icon="search"></i></button>
-        <button class="sq-btn bordered" id="btn-add" title="New download (Ctrl N)"><i data-icon="compose"></i></button>
+        <button class="sq-btn" id="btn-palette" title="搜索与命令 (Ctrl K)"><i data-icon="search"></i></button>
+        <button class="sq-btn bordered" id="btn-add" title="新建下载 (Ctrl N)"><i data-icon="compose"></i></button>
       </div>
       <nav class="nav" id="nav"></nav>
       <div class="side-bottom">
         <div class="net" id="net">
-          <div class="net-head"><span>Network</span><button class="limit" id="limit-btn" title="Speed limit"></button></div>
+          <div class="net-head"><span>网络</span><button class="limit" id="limit-btn" title="限速"></button></div>
           <div class="net-speed"><b id="net-speed">0</b><span id="net-unit">B/s</span></div>
           <canvas id="net-graph"></canvas>
-          <div class="net-foot" id="net-foot">Idle</div>
+          <div class="net-foot" id="net-foot">空闲</div>
         </div>
-        <button class="nav-item" id="btn-settings"><span class="ni-icon"><i data-icon="settings"></i></span><span class="ni-label">Settings</span></button>
+        <button class="nav-item" id="btn-settings"><span class="ni-icon"><i data-icon="settings"></i></span><span class="ni-label">设置</span></button>
       </div>
     </aside>
 
     <!-- Main card -->
     <main class="main">
       <header class="header" data-tauri-drag-region>
-        <div class="h-title" data-tauri-drag-region><span class="h-icon" id="h-icon"></span><span id="h-name">All downloads</span><span class="h-count" id="h-count"></span></div>
+        <div class="h-title" data-tauri-drag-region><span class="h-icon" id="h-icon"></span><span id="h-name">全部下载</span><span class="h-count" id="h-count"></span></div>
         <div class="h-actions">
-          <button class="ghost-btn" id="btn-pause-all"><i data-icon="pause"></i>Pause all</button>
-          <button class="ghost-btn" id="btn-resume-all"><i data-icon="play"></i>Resume all</button>
-          <button class="search-btn" id="btn-search"><i data-icon="search"></i><span>Search</span><kbd>Ctrl K</kbd></button>
+          <button class="ghost-btn" id="btn-pause-all"><i data-icon="pause"></i>全部暂停</button>
+          <button class="ghost-btn" id="btn-resume-all"><i data-icon="play"></i>全部恢复</button>
+          <button class="search-btn" id="btn-search"><i data-icon="search"></i><span>搜索</span><kbd>Ctrl K</kbd></button>
           <span class="win-ctrls" id="win-ctrls">
-            <button id="w-min" title="Minimize"><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></button>
-            <button id="w-max" title="Maximize"><svg viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx="1.2" /></svg></button>
-            <button id="w-close" class="close" title="Close"><svg viewBox="0 0 10 10"><path d="M2 2l6 6M8 2 2 8" /></svg></button>
+            <button id="w-min" title="最小化"><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></button>
+            <button id="w-max" title="最大化"><svg viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" rx="1.2" /></svg></button>
+            <button id="w-close" class="close" title="关闭"><svg viewBox="0 0 10 10"><path d="M2 2l6 6M8 2 2 8" /></svg></button>
           </span>
         </div>
       </header>
       <div class="body">
         <div class="list" id="list">
-          <div class="onboard" id="update" hidden></div>
           <div class="onboard" id="onboard" hidden></div>
           <div id="rows"></div>
           <div class="empty" id="empty" hidden>
             <div class="empty-icon"><i data-icon="download"></i></div>
-            <h2 id="empty-title">No downloads yet</h2>
-            <p id="empty-text">Paste a link, drop one onto this window, or start a download in your browser.</p>
+            <h2 id="empty-title">还没有下载</h2>
+            <p id="empty-text">粘贴一个链接、拖入本窗口，或在浏览器里开始下载。</p>
             <div class="empty-actions" id="empty-actions">
-              <button class="btn primary" id="empty-add"><i data-icon="plus"></i>New download <kbd>Ctrl N</kbd></button>
-              <button class="btn" id="empty-ext"><i data-icon="globe"></i>Get the browser extension</button>
+              <button class="btn primary" id="empty-add"><i data-icon="plus"></i>新建下载 <kbd>Ctrl N</kbd></button>
+              <button class="btn" id="empty-ext"><i data-icon="globe"></i>获取浏览器扩展</button>
             </div>
           </div>
         </div>
@@ -62,39 +61,39 @@
   </div>
 
   <div class="toasts" id="toasts"></div>
-  <div class="drop" id="drop" hidden><div class="drop-card"><i data-icon="download"></i><b>Drop to download</b><span>SwiftDL will fetch the file's details first</span></div></div>
+  <div class="drop" id="drop" hidden><div class="drop-card"><i data-icon="download"></i><b>拖入即可下载</b><span>SwiftDL 会先获取文件信息</span></div></div>
 
   <!-- Command palette -->
   <dialog id="dlg-palette" class="modal palette">
-    <div class="pal-input"><i data-icon="search"></i><input id="pal-q" placeholder="Search downloads or type a command…" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></div>
+    <div class="pal-input"><i data-icon="search"></i><input id="pal-q" placeholder="搜索下载或输入命令…" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></div>
     <div class="pal-list" id="pal-list"></div>
-    <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>Enter</kbd> select</span><span><kbd>Esc</kbd> close</span></div>
+    <div class="pal-foot"><span><kbd>↑</kbd><kbd>↓</kbd> 选择</span><span><kbd>Enter</kbd> 确认</span><span><kbd>Esc</kbd> 关闭</span></div>
   </dialog>
 
   <!-- New download -->
   <dialog id="dlg-add" class="modal composer">
     <form method="dialog" id="form-add">
       <div class="comp-top">
-        <span class="crumb"><img src="logo.svg" alt="" width="14" height="14">SwiftDL</span><i data-icon="chevron" class="crumb-sep"></i><span class="crumb-cur">New download</span>
+        <span class="crumb"><img src="logo.svg" alt="" width="14" height="14">SwiftDL</span><i data-icon="chevron" class="crumb-sep"></i><span class="crumb-cur">新建下载</span>
         <span class="grow"></span>
-        <button type="button" class="sq-btn" id="add-x" title="Close (Esc)"><i data-icon="x"></i></button>
+        <button type="button" class="sq-btn" id="add-x" title="关闭 (Esc)"><i data-icon="x"></i></button>
       </div>
-      <input id="add-url" class="comp-url" type="url" placeholder="Paste a link…" required autocomplete="off" spellcheck="false">
+      <input id="add-url" class="comp-url" type="url" placeholder="粘贴链接…" required autocomplete="off" spellcheck="false">
       <div class="comp-file" id="add-file" hidden>
         <div id="add-tile"></div>
         <div class="cf-body">
-          <input id="add-filename" class="cf-name" spellcheck="false" aria-label="File name">
+          <input id="add-filename" class="cf-name" spellcheck="false" aria-label="文件名">
           <div class="cf-sub" id="add-sub"></div>
         </div>
       </div>
       <div class="comp-state" id="add-state"></div>
       <div class="chips" id="add-chips"></div>
       <div class="comp-foot">
-        <button type="button" class="ghost-btn" id="add-paste"><i data-icon="clipboard"></i>Paste from clipboard</button>
-        <button type="button" class="ghost-btn" id="add-grab" title="List the files a web page links to"><i data-icon="search"></i>Find files on a page</button>
+        <button type="button" class="ghost-btn" id="add-paste"><i data-icon="clipboard"></i>从剪贴板粘贴</button>
+        <button type="button" class="ghost-btn" id="add-grab" title="列出网页里链接的文件"><i data-icon="search"></i>在页面里找文件</button>
         <span class="grow"></span>
-        <button type="button" class="btn" id="add-later">Download later</button>
-        <button type="submit" class="btn primary" id="add-start">Download <kbd>Ctrl ↵</kbd></button>
+        <button type="button" class="btn" id="add-later">稍后下载</button>
+        <button type="submit" class="btn primary" id="add-start">下载 <kbd>Ctrl ↵</kbd></button>
       </div>
     </form>
   </dialog>
@@ -103,111 +102,111 @@
   <dialog id="dlg-grab" class="modal composer grab">
     <form method="dialog" id="form-grab">
       <div class="comp-top">
-        <span class="crumb"><img src="logo.svg" alt="" width="14" height="14">SwiftDL</span><i data-icon="chevron" class="crumb-sep"></i><span class="crumb-cur">Find files on a page</span>
+        <span class="crumb"><img src="logo.svg" alt="" width="14" height="14">SwiftDL</span><i data-icon="chevron" class="crumb-sep"></i><span class="crumb-cur">在页面里找文件</span>
         <span class="grow"></span>
-        <button type="button" class="sq-btn" id="grab-x" title="Close (Esc)"><i data-icon="x"></i></button>
+        <button type="button" class="sq-btn" id="grab-x" title="关闭 (Esc)"><i data-icon="x"></i></button>
       </div>
-      <input id="grab-url" class="comp-url" type="url" placeholder="Paste a page address…" autocomplete="off" spellcheck="false">
+      <input id="grab-url" class="comp-url" type="url" placeholder="粘贴网页地址…" autocomplete="off" spellcheck="false">
       <div class="comp-state" id="grab-state"></div>
       <div class="chips" id="grab-chips"></div>
       <div class="grab-list" id="grab-list"></div>
       <div class="comp-foot">
-        <button type="button" class="ghost-btn" id="grab-all">Select all</button>
+        <button type="button" class="ghost-btn" id="grab-all">全选</button>
         <span class="grow"></span>
-        <button type="button" class="btn primary" id="grab-go" disabled>Download</button>
+        <button type="button" class="btn primary" id="grab-go" disabled>下载</button>
       </div>
     </form>
   </dialog>
   <dialog id="dlg-settings" class="modal settings">
     <form method="dialog" id="form-settings">
       <nav class="set-nav" id="set-nav">
-        <div class="set-nav-title">Settings</div>
-        <button type="button" data-tab="general" class="on"><i data-icon="sliders"></i>General</button>
-        <button type="button" data-tab="speed"><i data-icon="gauge"></i>Speed</button>
-        <button type="button" data-tab="browser"><i data-icon="globe"></i>Browser</button>
-        <button type="button" data-tab="about"><i data-icon="info"></i>About</button>
+        <div class="set-nav-title">设置</div>
+        <button type="button" data-tab="general" class="on"><i data-icon="sliders"></i>通用</button>
+        <button type="button" data-tab="speed"><i data-icon="gauge"></i>速度</button>
+        <button type="button" data-tab="browser"><i data-icon="globe"></i>浏览器</button>
+        <button type="button" data-tab="about"><i data-icon="info"></i>关于</button>
       </nav>
       <div class="set-main">
         <section data-panel="general">
-          <h2>General</h2>
+          <h2>通用</h2>
           <div class="set-group">
-            <div class="set-row"><div class="sr-text"><b>Theme</b><span>System follows your computer's light or dark setting</span></div>
-              <div class="seg theme-seg" id="set-theme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></div></div>
-            <div class="set-row col"><div class="sr-text"><b>Interface size</b><span>Makes everything in the main window larger or smaller</span></div>
+            <div class="set-row"><div class="sr-text"><b>主题</b><span>跟随系统的浅色或深色外观</span></div>
+              <div class="seg theme-seg" id="set-theme"><button type="button" data-v="system">系统</button><button type="button" data-v="light">浅色</button><button type="button" data-v="dark">深色</button></div></div>
+            <div class="set-row col"><div class="sr-text"><b>界面缩放</b><span>调整主窗口里所有内容的大小</span></div>
               <div class="seg" id="set-scale"><button type="button" data-v="90">90%</button><button type="button" data-v="100">100%</button><button type="button" data-v="110">110%</button><button type="button" data-v="125">125%</button><button type="button" data-v="150">150%</button></div></div>
           </div>
           <div class="set-group">
-            <div class="set-row"><div class="sr-text"><b>Download folder</b><span id="set-dir"></span></div><button type="button" class="btn sm" id="set-browse">Change…</button></div>
-            <label class="set-row"><div class="sr-text"><b>Sort by file type</b><span>Save videos, music, programs and archives into their own folders</span></div><span class="switch"><input type="checkbox" id="set-sort"><i></i></span></label>
+            <div class="set-row"><div class="sr-text"><b>下载文件夹</b><span id="set-dir"></span></div><button type="button" class="btn sm" id="set-browse">更改…</button></div>
+            <label class="set-row"><div class="sr-text"><b>按类型分类</b><span>把视频、音乐、程序和压缩包分别存进各自的文件夹</span></div><span class="switch"><input type="checkbox" id="set-sort"><i></i></span></label>
           </div>
           <div class="set-group">
-            <label class="set-row"><div class="sr-text"><b>Confirm browser downloads</b><span>Show New download before a download from the browser starts</span></div><span class="switch"><input type="checkbox" id="set-ask"><i></i></span></label>
-            <label class="set-row"><div class="sr-text"><b>Notifications</b><span>Notify me when a download finishes</span></div><span class="switch"><input type="checkbox" id="set-notify"><i></i></span></label>
-            <label class="set-row"><div class="sr-text"><b>Watch the clipboard</b><span>When you switch to SwiftDL after copying a download link, offer to download it</span></div><span class="switch"><input type="checkbox" id="set-clip"><i></i></span></label>
-            <label class="set-row"><div class="sr-text"><b>Unpack archives</b><span>When a .zip, .tar.gz or .7z finishes, unpack it into a folder beside it</span></div><span class="switch"><input type="checkbox" id="set-extract"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>浏览器下载前先确认</b><span>浏览器的下载开始前，先弹出「新建下载」窗口</span></div><span class="switch"><input type="checkbox" id="set-ask"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>通知</b><span>下载完成时通知我</span></div><span class="switch"><input type="checkbox" id="set-notify"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>监听剪贴板</b><span>复制下载链接后切回 SwiftDL 时，询问是否下载</span></div><span class="switch"><input type="checkbox" id="set-clip"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>自动解压</b><span>.zip、.tar.gz 或 .7z 下载完成后，解压到旁边的文件夹</span></div><span class="switch"><input type="checkbox" id="set-extract"><i></i></span></label>
           </div>
           <div class="set-group">
-            <div class="set-row col"><div class="sr-text"><b>After a torrent finishes</b><span>Sharing it back helps others download it. The download is ready either way.</span></div>
-              <div class="seg" id="set-seed"><button type="button" data-v="stop">Stop sharing</button><button type="button" data-v="1">Until ratio 1</button><button type="button" data-v="2">Until ratio 2</button><button type="button" data-v="forever">Keep sharing</button></div></div>
+            <div class="set-row col"><div class="sr-text"><b>种子下载完成后</b><span>继续做种可以帮助其他人下载。无论选哪种，文件此时都已可用。</span></div>
+              <div class="seg" id="set-seed"><button type="button" data-v="stop">停止做种</button><button type="button" data-v="1">做种到分享率 1</button><button type="button" data-v="2">做种到分享率 2</button><button type="button" data-v="forever">一直做种</button></div></div>
           </div>
           <div class="set-group">
-            <label class="set-row"><div class="sr-text"><b>Show a window for each download</b><span>Progress, connections and a "Download complete" summary</span></div><span class="switch"><input type="checkbox" id="set-progress-win"><i></i></span></label>
-            <label class="set-row"><div class="sr-text"><b>Keep running in the tray</b><span>Closing the window keeps downloads and browser integration going</span></div><span class="switch"><input type="checkbox" id="set-tray"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>为每个下载显示单独窗口</b><span>显示进度、连接情况和「下载完成」摘要</span></div><span class="switch"><input type="checkbox" id="set-progress-win"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>关闭窗口时驻留托盘</b><span>关窗后下载和浏览器集成继续运行</span></div><span class="switch"><input type="checkbox" id="set-tray"><i></i></span></label>
           </div>
         </section>
         <section data-panel="speed" hidden>
-          <h2>Speed</h2>
+          <h2>速度</h2>
           <div class="set-group">
-            <div class="set-row"><div class="sr-text"><b>Connections per download</b><span>More connections are faster on servers that limit each one</span></div><div class="stepper" data-for="set-conns"><button type="button" data-d="-1">−</button><input id="set-conns" type="number" min="1" max="32"><button type="button" data-d="1">+</button></div></div>
-            <div class="set-row"><div class="sr-text"><b>Simultaneous downloads</b><span>Others wait in the queue</span></div><div class="stepper" data-for="set-concurrent"><button type="button" data-d="-1">−</button><input id="set-concurrent" type="number" min="1" max="10"><button type="button" data-d="1">+</button></div></div>
+            <div class="set-row"><div class="sr-text"><b>每个下载的连接数</b><span>在限制单连接速度的服务器上，连接越多越快</span></div><div class="stepper" data-for="set-conns"><button type="button" data-d="-1">−</button><input id="set-conns" type="number" min="1" max="32"><button type="button" data-d="1">+</button></div></div>
+            <div class="set-row"><div class="sr-text"><b>同时下载任务数</b><span>其余任务排队等待</span></div><div class="stepper" data-for="set-concurrent"><button type="button" data-d="-1">−</button><input id="set-concurrent" type="number" min="1" max="10"><button type="button" data-d="1">+</button></div></div>
           </div>
           <div class="set-group">
-            <div class="set-row col"><div class="sr-text"><b>Speed limit</b><span>Shared across all downloads</span></div>
+            <div class="set-row col"><div class="sr-text"><b>限速</b><span>对所有下载生效</span></div>
               <div class="seg" id="set-limits"></div>
-              <label class="custom">Custom <input id="set-limit-custom" type="number" min="0" step="64" placeholder="—"> KB/s</label>
+              <label class="custom">自定义 <input id="set-limit-custom" type="number" min="0" step="64" placeholder="—"> KB/s</label>
             </div>
           </div>
           <div class="set-group">
-            <div class="set-row"><div class="sr-text"><b>Proxy</b><span>Like http://127.0.0.1:8080 or socks5://127.0.0.1:1080. Empty follows your system. Restart SwiftDL to apply.</span></div><input id="set-proxy" class="txt" placeholder="None" spellcheck="false" autocomplete="off"></div>
-            <div class="set-row"><div class="sr-text"><b>Debrid service</b><span>Links from file-hosting sites the service supports download through your account there.</span></div>
+            <div class="set-row"><div class="sr-text"><b>代理</b><span>例如 http://127.0.0.1:8080 或 socks5://127.0.0.1:1080。留空则跟随系统。重启 SwiftDL 生效。</span></div><input id="set-proxy" class="txt" placeholder="无" spellcheck="false" autocomplete="off"></div>
+            <div class="set-row"><div class="sr-text"><b>网盘加速服务</b><span>该服务支持的网盘链接会通过你的账号下载。</span></div>
               <div class="seg" id="set-debrid-provider"><button type="button" data-v="realdebrid">Real-Debrid</button><button type="button" data-v="alldebrid">AllDebrid</button><button type="button" data-v="premiumize">Premiumize</button></div></div>
-            <div class="set-row"><div class="sr-text"><b>Debrid API token</b><span>From the service's account page: real-debrid.com/apitoken, alldebrid.com/apikeys or premiumize.me/account.</span></div><input id="set-debrid" class="txt" type="password" placeholder="Not used" spellcheck="false" autocomplete="off"></div>
-            <div class="set-row"><div class="sr-text"><b>Network address</b><span>Send downloads out only from this address, such as your VPN's. If it goes away, downloads stop instead of using another route. Restart SwiftDL to apply.</span></div><input id="set-bind" class="txt" placeholder="Any" spellcheck="false" autocomplete="off"></div>
+            <div class="set-row"><div class="sr-text"><b>加速服务 API 令牌</b><span>在服务账号页获取：real-debrid.com/apitoken、alldebrid.com/apikeys 或 premiumize.me/account。</span></div><input id="set-debrid" class="txt" type="password" placeholder="未使用" spellcheck="false" autocomplete="off"></div>
+            <div class="set-row"><div class="sr-text"><b>网络地址</b><span>只从这个地址发起下载（例如你的 VPN 地址）。该地址失效时下载会停止，而不会改走其他线路。重启 SwiftDL 生效。</span></div><input id="set-bind" class="txt" placeholder="任意" spellcheck="false" autocomplete="off"></div>
           </div>
-          <h2>Local API</h2>
+          <h2>本地 API</h2>
           <div class="set-group">
-            <label class="set-row"><div class="sr-text"><b>aria2-compatible API</b><span>Lets tools like AriaNg and scripts control SwiftDL. Local only, and every call needs the secret. Restart SwiftDL to apply.</span></div><span class="switch"><input type="checkbox" id="set-api"><i></i></span></label>
-            <div class="set-row"><div class="sr-text"><b>Port</b><span id="set-api-hint">Open http://127.0.0.1:6800 for the web remote</span></div><input id="set-api-port" class="txt" type="number" min="1024" max="65535" placeholder="6800"></div>
-            <div class="set-row"><div class="sr-text"><b>Secret</b><span>Used as token:SECRET in each call</span></div><input id="set-api-secret" class="txt" spellcheck="false" autocomplete="off" placeholder="Made when you turn it on"></div>
-            <label class="set-row"><div class="sr-text"><b>Allow other devices on my network</b><span>For a phone. Anyone on your Wi-Fi who knows the secret could control SwiftDL, and the connection isn't encrypted, so only use a network you trust. Needs a secret of 12 or more characters.</span></div><span class="switch"><input type="checkbox" id="set-api-lan"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>兼容 aria2 的 API</b><span>让 AriaNg 等工具和脚本控制 SwiftDL。仅限本机，每次调用都需要密钥。重启 SwiftDL 生效。</span></div><span class="switch"><input type="checkbox" id="set-api"><i></i></span></label>
+            <div class="set-row"><div class="sr-text"><b>端口</b><span id="set-api-hint">打开 http://127.0.0.1:6800 使用网页远程控制</span></div><input id="set-api-port" class="txt" type="number" min="1024" max="65535" placeholder="6800"></div>
+            <div class="set-row"><div class="sr-text"><b>密钥</b><span>在每次调用中以 token:SECRET 形式使用</span></div><input id="set-api-secret" class="txt" spellcheck="false" autocomplete="off" placeholder="开启时自动生成"></div>
+            <label class="set-row"><div class="sr-text"><b>允许局域网内的其他设备</b><span>供手机使用。同一 Wi-Fi 下知道密钥的人都能控制 SwiftDL，且连接未加密，请只在可信网络使用。密钥需至少 12 个字符。</span></div><span class="switch"><input type="checkbox" id="set-api-lan"><i></i></span></label>
           </div>
-          <h2>Automation</h2>
+          <h2>自动化</h2>
           <div class="set-group">
-            <div class="set-row col"><div class="sr-text"><b>When all downloads finish</b><span>Happens once, then goes back to doing nothing</span></div>
-              <div class="seg" id="set-whendone"><button type="button" data-v="nothing">Nothing</button><button type="button" data-v="close">Quit SwiftDL</button><button type="button" data-v="sleep">Sleep</button><button type="button" data-v="shutdown">Shut down</button></div></div>
-            <div class="set-row"><div class="sr-text"><b>Start the queue at</b><span id="set-startat-hint">Downloads wait until this time, once</span></div>
-              <span class="custom"><input id="set-startat" type="time"> <button type="button" class="btn sm" id="set-startat-clear">Clear</button></span></div>
+            <div class="set-row col"><div class="sr-text"><b>所有下载完成后</b><span>只执行一次，随后恢复为无操作</span></div>
+              <div class="seg" id="set-whendone"><button type="button" data-v="nothing">无操作</button><button type="button" data-v="close">退出 SwiftDL</button><button type="button" data-v="sleep">睡眠</button><button type="button" data-v="shutdown">关机</button></div></div>
+            <div class="set-row"><div class="sr-text"><b>定时开始下载</b><span id="set-startat-hint">下载会等到这个时间再开始，仅一次</span></div>
+              <span class="custom"><input id="set-startat" type="time"> <button type="button" class="btn sm" id="set-startat-clear">清除</button></span></div>
           </div>
         </section>
         <section data-panel="browser" hidden>
-          <h2>Browser extension</h2>
-          <p class="lead">The extension sends browser downloads to SwiftDL, with your cookies so downloads behind a login work, and adds a download button to videos.</p>
+          <h2>浏览器扩展</h2>
+          <p class="lead">扩展会把浏览器的下载交给 SwiftDL，并带上 cookies，登录后的下载也能用；还会在视频上添加下载按钮。</p>
           <div class="ext-status" id="ext-status"></div>
           <div class="set-group" id="browser-list"></div>
-          <p class="set-note" id="ext-saveas" hidden>Browser still asks where to save? Turn off <b>Ask where to save each file before downloading</b> in its download settings, so only SwiftDL asks.</p>
+          <p class="set-note" id="ext-saveas" hidden>浏览器还是询问保存位置？在浏览器的下载设置里关掉「每次下载前询问保存位置」，这样就只由 SwiftDL 询问。</p>
           <div class="set-group">
-            <label class="set-row"><div class="sr-text"><b>Offer the extension automatically</b><span>Supported browsers ask once, the next time they start</span></div><span class="switch"><input type="checkbox" id="set-offer"><i></i></span></label>
+            <label class="set-row"><div class="sr-text"><b>自动提供扩展</b><span>受支持的浏览器下次启动时询问一次</span></div><span class="switch"><input type="checkbox" id="set-offer"><i></i></span></label>
           </div>
         </section>
         <section data-panel="about" hidden>
-          <div class="about"><img src="logo.svg" alt="" width="64" height="64"><h2>SwiftDL</h2><p id="version"></p><p class="muted">Fast, resumable downloads with many connections at once.<br>Free and open source.</p></div>
+          <div class="about"><img src="logo.svg" alt="" width="64" height="64"><h2>SwiftDL</h2><p id="version"></p><p class="muted">多连接并发、可断点续传的高速下载。<br>免费开源。</p></div>
           <div class="set-group">
-            <div class="set-row"><div class="sr-text"><b>Debug log</b><span>What SwiftDL did and any errors. Attach it when you report a bug.</span></div><button type="button" class="btn sm" id="set-log">Open log</button></div>
+            <div class="set-row"><div class="sr-text"><b>调试日志</b><span>记录 SwiftDL 的运行情况和错误，反馈问题时请附上。</span></div><button type="button" class="btn sm" id="set-log">打开日志</button></div>
           </div>
         </section>
         <div class="set-foot">
-          <button type="button" class="btn" id="set-cancel">Cancel</button>
-          <button type="submit" class="btn primary">Save</button>
+          <button type="button" class="btn" id="set-cancel">取消</button>
+          <button type="submit" class="btn primary">保存</button>
         </div>
       </div>
     </form>
@@ -217,33 +216,33 @@
   <!-- Install the extension from the folder SwiftDL ships with -->
   <dialog id="dlg-ext" class="modal guide">
     <form method="dialog">
-      <h3>Add the browser extension</h3>
-      <p class="muted">The extension came with SwiftDL. Add it in four steps; this window notices as soon as it connects.</p>
+      <h3>添加浏览器扩展</h3>
+      <p class="muted">扩展已随 SwiftDL 一起提供。按下面四步添加；一旦连接成功，这个窗口会立刻察觉。</p>
       <ol class="guide-steps">
-        <li><span class="step">1</span><div><b>Open the extensions page</b><span id="ext-step1">Type <code>chrome://extensions</code> in the address bar</span><span class="guide-browsers" id="ext-browsers"></span></div></li>
-        <li><span class="step">2</span><div><b>Turn on Developer mode</b><span>The switch is in the top-right corner of that page</span></div></li>
-        <li><span class="step">3</span><div><b>Click Load unpacked</b><span>A folder picker opens</span></div></li>
-        <li><span class="step">4</span><div><b>Choose SwiftDL's extension folder</b><span>The path is already copied, so paste it into the picker</span><span class="guide-path"><code id="ext-path">…</code><button type="button" class="sq-btn" id="ext-copy" title="Copy path"></button></span></div></li>
+        <li><span class="step">1</span><div><b>打开扩展管理页面</b><span id="ext-step1">在地址栏输入 <code>chrome://extensions</code></span><span class="guide-browsers" id="ext-browsers"></span></div></li>
+        <li><span class="step">2</span><div><b>打开开发者模式</b><span>开关在那个页面的右上角</span></div></li>
+        <li><span class="step">3</span><div><b>点击「加载已解压的扩展程序」</b><span>会弹出文件夹选择器</span></div></li>
+        <li><span class="step">4</span><div><b>选择 SwiftDL 的扩展文件夹</b><span>路径已复制，粘贴到选择器里即可</span><span class="guide-path"><code id="ext-path">…</code><button type="button" class="sq-btn" id="ext-copy" title="复制路径"></button></span></div></li>
       </ol>
-      <p class="guide-wait" id="ext-wait">Waiting for the extension to connect…</p>
-      <p class="guide-note">Use this folder rather than a downloaded copy: it stays in place while SwiftDL is installed and is refreshed when SwiftDL updates.</p>
-      <p class="guide-note"><b>Seeing two download windows?</b> Turn off “Ask where to save each file before downloading” in your browser's download settings. The browser asks before SwiftDL can take over.</p>
-      <p class="guide-note"><b>Firefox:</b> get it from <a href="#" id="ext-ff-store">Firefox Add-ons</a> instead.</p>
+      <p class="guide-wait" id="ext-wait">等待扩展连接…</p>
+      <p class="guide-note">请使用这个文件夹，而不是另外下载的副本：SwiftDL 安装期间它会保持在原位，SwiftDL 更新时也会同步刷新。</p>
+      <p class="guide-note"><b>出现两个下载窗口？</b>请在浏览器下载设置里关闭「每次下载前询问保存位置」。浏览器先询问会阻止 SwiftDL 接管。</p>
+      <p class="guide-note"><b>Firefox：</b>请改从 <a href="#" id="ext-ff-store">Firefox Add-ons</a> 商店安装。</p>
       <div class="confirm-foot">
-        <button value="close" class="btn">Done</button>
-        <button type="button" class="btn primary" id="ext-open">Open extension folder</button>
+        <button value="close" class="btn">完成</button>
+        <button type="button" class="btn primary" id="ext-open">打开扩展文件夹</button>
       </div>
     </form>
   </dialog>
 
   <dialog id="dlg-delete" class="modal confirm">
     <form method="dialog">
-      <h3 id="del-title">Remove download?</h3>
+      <h3 id="del-title">移除下载？</h3>
       <p id="del-text"></p>
-      <label class="check" id="del-files-row"><input type="checkbox" id="del-files"><span>Also delete the file from disk</span></label>
+      <label class="check" id="del-files-row"><input type="checkbox" id="del-files"><span>同时从磁盘删除文件</span></label>
       <div class="confirm-foot">
-        <button value="cancel" class="btn">Cancel</button>
-        <button value="ok" class="btn danger" id="del-ok">Remove</button>
+        <button value="cancel" class="btn">取消</button>
+        <button value="ok" class="btn danger" id="del-ok">移除</button>
       </div>
     </form>
   </dialog>

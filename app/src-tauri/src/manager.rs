@@ -250,7 +250,7 @@ impl DownloadManager {
     /// Where a file of this category goes by default.
     pub fn default_dir(&self, category: &str) -> PathBuf {
         let s = self.settings();
-        if s.sort_into_categories && category != "Other" {
+        if s.sort_into_categories && category != "其他" {
             s.download_dir.join(category)
         } else {
             s.download_dir
@@ -488,7 +488,7 @@ impl DownloadManager {
             g.confirms.insert(token, inc);
             token
         };
-        if let Err(e) = crate::windows::open(&self.app, &format!("new-{token}"), &format!("confirm={token}"), "New download") {
+        if let Err(e) = crate::windows::open(&self.app, &format!("new-{token}"), &format!("confirm={token}"), "新建下载") {
             crate::log::line(&format!("could not open the New download window: {e:#}"));
         }
     }
@@ -700,7 +700,7 @@ impl DownloadManager {
         }
         if let Some(name) = notify {
             use tauri_plugin_notification::NotificationExt;
-            let _ = self.app.notification().builder().title("Download complete").body(name).show();
+            let _ = self.app.notification().builder().title("下载完成").body(name).show();
         }
         if let Some(path) = unpack {
             let app = self.app.clone();
@@ -946,15 +946,15 @@ pub fn to_header_map(headers: &[(String, String)]) -> HeaderMap {
 pub fn category_for(filename: &str) -> &'static str {
     let ext = Path::new(filename).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
     match ext.as_str() {
-        "zip" | "rar" | "7z" | "tar" | "gz" | "tgz" | "xz" | "bz2" | "zst" | "iso" | "img" => "Compressed",
+        "zip" | "rar" | "7z" | "tar" | "gz" | "tgz" | "xz" | "bz2" | "zst" | "iso" | "img" => "压缩文件",
         "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "odt" | "txt" | "rtf" | "epub" | "csv" | "md" => {
-            "Documents"
+            "文档"
         }
-        "mp3" | "wav" | "flac" | "aac" | "ogg" | "m4a" | "opus" | "wma" => "Music",
-        "mp4" | "mkv" | "avi" | "mov" | "webm" | "flv" | "wmv" | "m4v" | "mpg" | "mpeg" | "3gp" | "ts" => "Video",
-        "exe" | "msi" | "dmg" | "pkg" | "deb" | "rpm" | "apk" | "appimage" | "msix" | "bat" | "jar" => "Programs",
-        "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg" | "bmp" | "heic" | "avif" => "Images",
-        _ => "Other",
+        "mp3" | "wav" | "flac" | "aac" | "ogg" | "m4a" | "opus" | "wma" => "音乐",
+        "mp4" | "mkv" | "avi" | "mov" | "webm" | "flv" | "wmv" | "m4v" | "mpg" | "mpeg" | "3gp" | "ts" => "视频",
+        "exe" | "msi" | "dmg" | "pkg" | "deb" | "rpm" | "apk" | "appimage" | "msix" | "bat" | "jar" => "程序",
+        "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg" | "bmp" | "heic" | "avif" => "图片",
+        _ => "其他",
     }
 }
 

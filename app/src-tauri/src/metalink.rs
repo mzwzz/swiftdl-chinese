@@ -48,7 +48,7 @@ pub fn parse(xml: &str) -> Result<Metalink> {
         })
         .collect();
     if urls.is_empty() {
-        bail!("the Metalink has no web addresses SwiftDL can use");
+        bail!("Metalink 里没有 SwiftDL 可用的网页地址");
     }
     urls.sort_by_key(|(rank, _)| *rank); // stable: equal ranks keep their order
     Ok(Metalink { name, size, sha256, urls: urls.into_iter().map(|(_, u)| u).collect() })

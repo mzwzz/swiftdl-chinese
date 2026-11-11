@@ -27,19 +27,36 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Manager};
 
 pub fn show_main_window(app: &AppHandle) {
+    // macOS: clicking the tray menu doesn't activate the app; do it here so
+    // the window takes the keyboard like a Dock click would.
+    #[cfg(target_os = "macos")]
+    let _ = app.run_on_main_thread(windows::activate_app);
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
+        // The main window is built hidden and `show` lands async on macOS;
+        // tao's set_focus skips invisible windows, so retry once it shows.
+        let w = w.clone();
+        std::thread::spawn(move || {
+            for _ in 0..5 {
+                std::thread::sleep(std::time::Duration::from_millis(120));
+                if !w.is_visible().unwrap_or(false) {
+                    continue;
+                }
+                let _ = w.set_focus();
+                return;
+            }
+        });
     }
 }
 
 /// SwiftDL lives in the tray like IDM: closing the main window keeps
 /// downloads (and browser integration) running.
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Open SwiftDL", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit SwiftDL", true, None::<&str>)?;
-    let nolimit = tauri::menu::CheckMenuItem::with_id(app, "nolimit", "Ignore speed limit", true, false, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", "打开 SwiftDL", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出 SwiftDL", true, None::<&str>)?;
+    let nolimit = tauri::menu::CheckMenuItem::with_id(app, "nolimit", "忽略限速", true, false, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &nolimit, &PredefinedMenuItem::separator(app)?, &quit])?;
     let mut tray = TrayIconBuilder::with_id("main").tooltip("SwiftDL").menu(&menu).show_menu_on_left_click(false);
     if let Some(icon) = app.default_window_icon() {
