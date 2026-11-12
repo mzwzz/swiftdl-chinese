@@ -594,6 +594,9 @@ document.addEventListener("keydown", (e) => {
   else if (k === "Escape") { state.selected = null; render(); }
 });
 
+// 菜单栏「文件 → 新建下载…」：原生菜单在 Rust 侧，点下来时派发这个事件。
+window.addEventListener("swiftdl:new-download", () => openComposer());
+
 const firstUrl = (t: string | null | undefined) => (t || "").split(/\s+/).find((s) => /^(https?:\/\/|magnet:\?)\S+$/i.test(s));
 document.addEventListener("paste", (e) => {
   if (document.querySelector("dialog[open]") || target(e).matches?.("input")) return;

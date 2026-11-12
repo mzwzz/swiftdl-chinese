@@ -4,6 +4,15 @@
      links and .torrent files (see src/torrent.rs and the Opened event in main.rs). -->
 <plist version="1.0">
 <dict>
+  <!-- 菜单栏中文：AppKit 自动加的那些项（全部关闭 / 退出并关闭所有窗口 /
+       自动填充 / 听写 / 反馈给 Apple …）跟的是 App 的本地化，声明成中文才不会漏英文。 -->
+  <key>CFBundleDevelopmentRegion</key>
+  <string>zh_CN</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>zh-Hans</string>
+    <string>en</string>
+  </array>
   <key>CFBundleURLTypes</key>
   <array>
     <dict>

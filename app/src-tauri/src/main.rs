@@ -4,6 +4,7 @@
 mod browser;
 mod commands;
 mod manager;
+mod menu;
 mod log;
 mod media;
 mod native_host;
@@ -97,6 +98,11 @@ fn main() {
     tauri::Builder::default()
         // Must be first: a second launch (e.g. from the extension) hands its
         // args to this window and exits.
+        // macOS 菜单栏全中文（默认菜单是英文的 File / Edit / View / Window / Help）。
+        .menu(|app| menu::build(app))
+        .on_menu_event(|app, event| {
+            menu::handle(app, event.id().as_ref());
+        })
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if let Some(inc) = native_host::parse_prepare_arg(&args) {
                 app.state::<Arc<DownloadManager>>().prepare(&inc);
@@ -236,11 +242,17 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while starting SwiftDL")
         .run(|_app, _event| {
-            // Dock icon clicked (applicationShouldHandleReopen) while the
-            // window is hidden: bring it back, like the tray's "打开" does.
+            // Dock icon clicked (applicationShouldHandleReopen): the main window
+            // is the app's home. A running download window doesn't count — a
+            // Dock click still means "show me SwiftDL" (and brings the Dock icon
+            // back if a browser handoff had hidden it).
             #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = _event {
-                if !has_visible_windows {
+            if let tauri::RunEvent::Reopen { .. } = _event {
+                let main_hidden = _app
+                    .get_webview_window("main")
+                    .map(|w| !w.is_visible().unwrap_or(false))
+                    .unwrap_or(true);
+                if main_hidden {
                     show_main_window(_app);
                 }
             }
