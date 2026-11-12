@@ -27,6 +27,10 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Manager};
 
 pub fn show_main_window(app: &AppHandle) {
+    // macOS: the main window is the app's home, so make sure the Dock icon is
+    // back — a browser handoff launch may have hidden it (see setup).
+    #[cfg(target_os = "macos")]
+    let _ = app.set_dock_visibility(true);
     // macOS: clicking the tray menu doesn't activate the app; do it here so
     // the window takes the keyboard like a Dock click would.
     #[cfg(target_os = "macos")]
@@ -120,6 +124,20 @@ fn main() {
                 crate::log::line(&format!("could not offer the browser extension: {e:#}"));
             }
             app.manage(mgr.clone());
+            // macOS: launched by the browser (or by a magnet/.torrent link) only
+            // to show a download window. The tray icon is the app's home, so stay
+            // out of the Dock: a second Dock tile next to the copy the user already
+            // has open reads as "another SwiftDL". The icon comes back as soon as
+            // the main window is asked for — see show_main_window.
+            #[cfg(target_os = "macos")]
+            {
+                let handoff = native_host::parse_prepare_arg(&args).is_some()
+                    || native_host::parse_add_arg(&args).is_some()
+                    || torrent::parse_open_arg(&args).is_some();
+                if handoff {
+                    app.set_dock_visibility(false);
+                }
+            }
             if let Some(main) = app.get_webview_window("main") {
                 windows::polish(&main);
             }
@@ -230,6 +248,16 @@ fn main() {
             // not as arguments.
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = _event {
+                // Opened at launch (nothing visible yet): same tray-only
+                // treatment as a browser handoff, so only the download window
+                // shows up and the Dock stays quiet.
+                let nothing_visible = _app
+                    .webview_windows()
+                    .values()
+                    .all(|w| !w.is_visible().unwrap_or(false));
+                if nothing_visible {
+                    let _ = _app.set_dock_visibility(false);
+                }
                 for url in urls {
                     let link = if url.scheme() == "file" {
                         url.to_file_path().ok().map(|p| p.to_string_lossy().into_owned())
