@@ -218,6 +218,14 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while starting SwiftDL")
         .run(|_app, _event| {
+            // Dock icon clicked (applicationShouldHandleReopen) while the
+            // window is hidden: bring it back, like the tray's "打开" does.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = _event {
+                if !has_visible_windows {
+                    show_main_window(_app);
+                }
+            }
             // macOS hands over magnet links and .torrent files as an event,
             // not as arguments.
             #[cfg(target_os = "macos")]
