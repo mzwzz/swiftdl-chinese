@@ -142,6 +142,11 @@ fn main() {
                     || torrent::parse_open_arg(&args).is_some();
                 if handoff {
                     app.set_dock_visibility(false);
+                } else {
+                    // Info.plist 里声明了 LSUIElement，进程默认是 UIElement；
+                    // 用户自己启动（双击 / 点 Dock）时必须回到普通 App，
+                    // 否则主窗口没有 Dock 图标。
+                    let _ = app.set_dock_visibility(true);
                 }
             }
             if let Some(main) = app.get_webview_window("main") {
