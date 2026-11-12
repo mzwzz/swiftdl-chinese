@@ -126,6 +126,18 @@ fn main() {
             if let Err(e) = build_tray(app.handle()) {
                 crate::log::line(&format!("tray icon not available: {e:#}"));
             }
+            // Native appearance follows the saved theme, so vibrancy materials
+            // match from the first frame (CSS alone can't tint them).
+            {
+                let native = match mgr.settings().theme.as_str() {
+                    "dark" => Some(tauri::Theme::Dark),
+                    "light" => Some(tauri::Theme::Light),
+                    _ => None,
+                };
+                for w in app.webview_windows().values() {
+                    let _ = w.set_theme(native);
+                }
+            }
             mgr.start_ticker();
             let api = mgr.settings();
             if api.api_enabled && !api.api_secret.is_empty() {
@@ -181,6 +193,7 @@ fn main() {
             commands::open_extension_folder,
             commands::open_extensions_page,
             commands::open_log,
+            commands::set_theme,
             commands::pick_folder,
             commands::integration_status,
             commands::open_store,

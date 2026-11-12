@@ -2,11 +2,10 @@
 // in a normal browser, mock.ts stands in for the backend.
 
 import "./styles.css";
-import { invoke, listen, currentWindow, $ } from "./api";
+import { invoke, listen, $ } from "./api";
 import type { Item, Settings, IntegrationStatus, BrowserStatus, Incoming, ProbeInfo, Header, Status, Commands } from "./api";
 import { icon, CATS, catOf, parts, bytes, speed, dur, when, esc, host, segBar } from "./util";
 
-const appWindow = currentWindow();
 const target = (e: Event) => e.target as HTMLElement;
 
 const hydrate = () => document.querySelectorAll<HTMLElement>("i[data-icon]").forEach((el) => {
@@ -562,10 +561,6 @@ $("btn-add").onclick = $("empty-new").onclick = () => openComposer();
 $("btn-palette").onclick = $("btn-search").onclick = () => openPalette();
 $("btn-settings").onclick = () => openSettings();
 $("set-ext-guide").onclick = () => openExtensionGuide();
-$("w-min").onclick = () => appWindow?.minimize();
-$("w-max").onclick = () => appWindow?.toggleMaximize();
-$("w-close").onclick = () => appWindow?.close();
-if (!appWindow) $("win-ctrls").hidden = true;
 
 async function setLimit(k: number) {
   await saveSettings({ ...settings(), speedLimitKib: k });

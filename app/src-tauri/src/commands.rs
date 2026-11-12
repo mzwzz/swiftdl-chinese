@@ -1,5 +1,6 @@
 //! Functions the UI calls through `invoke(...)`.
 
+use tauri::Manager;
 use crate::manager::{AddRequest, DownloadManager, Incoming, Item, category_for, to_header_map};
 use crate::settings::Settings;
 use serde::Serialize;
@@ -68,6 +69,21 @@ pub fn default_dir(m: Mgr, filename: String) -> PathBuf {
 pub fn add_download(m: Mgr, req: AddRequest) -> Result<u64, String> {
     check_add(&req)?;
     Ok(m.add(req))
+}
+
+/// Syncs the native window appearance with the app's theme, so vibrancy
+/// materials (the translucent sidebar) match: CSS alone only repaints
+/// colors, macOS keeps its own appearance for window materials.
+#[tauri::command]
+pub fn set_theme(app: tauri::AppHandle, theme: Option<String>) {
+    let native = theme.as_deref().and_then(|s| match s {
+        "dark" => Some(tauri::Theme::Dark),
+        "light" => Some(tauri::Theme::Light),
+        _ => None,
+    });
+    for w in app.webview_windows().values() {
+        let _ = w.set_theme(native);
+    }
 }
 
 /// What a download may come from: web links, and for torrents also magnet

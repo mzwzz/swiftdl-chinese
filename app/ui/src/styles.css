@@ -33,16 +33,17 @@
   --shadow-card: 0 0 0 1px var(--border), 0 1px 2px rgba(15, 15, 25, .04);
   --shadow-pop: 0 0 0 1px rgba(15, 15, 25, .08), 0 4px 10px rgba(15, 15, 25, .06), 0 18px 48px -8px rgba(15, 15, 25, .2);
   --kbd-bg: rgba(15, 15, 25, .05);
-  --font: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", -apple-system, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Inter", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Inter", system-ui, sans-serif;
   color-scheme: light;
 }
 /* Dark theme. Each window sets data-theme on <html>: "light" or "dark",
    chosen in Settings or following the system (see theme.ts). */
 :root[data-theme="dark"] {
-  --bg: #090a0c;
-  --panel: #101114;
-  --elev: #16171b;
+  --bg: #1a1c1e;
+  --panel: #1a1b1f;
+  --elev: #1a1b1f;
+  --sidebar-tint: rgba(255, 255, 255, .55);
   --menu: rgba(26, 27, 32, .88);
   --hover: rgba(255, 255, 255, .035);
   --active: rgba(255, 255, 255, .065);
@@ -68,6 +69,7 @@
   --shadow-card: 0 0 0 1px var(--border);
   --shadow-pop: 0 0 0 1px rgba(255, 255, 255, .08), 0 8px 24px rgba(0, 0, 0, .4), 0 24px 64px -12px rgba(0, 0, 0, .6);
   --kbd-bg: rgba(255, 255, 255, .06);
+  --sidebar-tint: rgba(24, 25, 29, .66);
   color-scheme: dark;
 }
 
@@ -76,7 +78,7 @@ html, body { margin: 0; height: 100%; }
 body {
   font: 450 13px/1.45 var(--font);
   letter-spacing: -.003em;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   user-select: none;
   overflow: hidden;
@@ -99,8 +101,8 @@ kbd {
 .app { display: grid; grid-template-columns: 236px minmax(0, 1fr); height: 100vh; }
 
 /* ============ Sidebar ============ */
-.sidebar { display: flex; flex-direction: column; min-height: 0; padding: 0 10px 10px; }
-.side-top { display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 2px 0 6px; flex: none; }
+.sidebar { display: flex; flex-direction: column; min-height: 0; padding: 0 10px 10px; background: var(--sidebar-tint); }
+.side-top { display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 2px 0 74px; flex: none; }
 .brand { flex: 1; display: flex; align-items: center; gap: 9px; font: 600 14px/1 var(--font-display); letter-spacing: -.01em; }
 .sq-btn { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); transition: background .1s, color .1s; }
 .sq-btn:hover { background: var(--hover); color: var(--text); }
@@ -144,8 +146,9 @@ kbd {
 /* ============ Main card ============ */
 .main {
   display: flex; flex-direction: column; min-width: 0; min-height: 0;
-  margin: 8px 8px 8px 0; border-radius: 12px; overflow: hidden;
-  background: var(--panel); box-shadow: var(--shadow-card);
+  border-left: 1px solid var(--border);
+  border-radius: 0 10px 10px 0; overflow: hidden;
+  background: var(--panel);
 }
 .header { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 8px 0 18px; border-bottom: 1px solid var(--border); flex: none; }
 .h-title { flex: 1; display: flex; align-items: center; gap: 9px; min-width: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; }
@@ -162,11 +165,6 @@ kbd {
 .search-btn span { flex: 1; text-align: left; }
 .search-btn:hover { color: var(--muted); box-shadow: inset 0 0 0 1px var(--border-2); }
 .search-btn svg.ic { width: 14px; height: 14px; }
-.win-ctrls { display: flex; margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--border); }
-.win-ctrls button { width: 32px; height: 28px; border-radius: 6px; display: grid; place-items: center; color: var(--muted); }
-.win-ctrls button:hover { background: var(--hover); color: var(--text); }
-.win-ctrls button.close:hover { background: #e5484d; color: #fff; }
-.win-ctrls svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
 
 .body { flex: 1; min-height: 0; display: flex; }
 .list { flex: 1; min-width: 0; overflow-y: auto; position: relative; container-type: inline-size; }
