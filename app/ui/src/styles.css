@@ -33,6 +33,7 @@
   --shadow-card: 0 0 0 1px var(--border), 0 1px 2px rgba(15, 15, 25, .04);
   --shadow-pop: 0 0 0 1px rgba(15, 15, 25, .08), 0 4px 10px rgba(15, 15, 25, .06), 0 18px 48px -8px rgba(15, 15, 25, .2);
   --kbd-bg: rgba(15, 15, 25, .05);
+  --sidebar-tint: rgba(255, 255, 255, .62);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Inter", system-ui, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Inter", system-ui, sans-serif;
   color-scheme: light;
@@ -43,7 +44,6 @@
   --bg: #1a1c1e;
   --panel: #1a1b1f;
   --elev: #1a1b1f;
-  --sidebar-tint: rgba(255, 255, 255, .55);
   --menu: rgba(26, 27, 32, .88);
   --hover: rgba(255, 255, 255, .035);
   --active: rgba(255, 255, 255, .065);
