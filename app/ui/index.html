@@ -46,13 +46,9 @@
           <div class="onboard" id="onboard" hidden></div>
           <div id="rows"></div>
           <div class="empty" id="empty" hidden>
-            <div class="empty-icon"><i data-icon="download"></i></div>
-            <h2 id="empty-title">还没有下载</h2>
+            <button class="empty-icon" id="empty-new" title="新建下载 (Ctrl N)"><i data-icon="download"></i></button>
+            <h2 id="empty-title">新建下载 <kbd>Ctrl N</kbd></h2>
             <p id="empty-text">粘贴一个链接、拖入本窗口，或在浏览器里开始下载。</p>
-            <div class="empty-actions" id="empty-actions">
-              <button class="btn primary" id="empty-add"><i data-icon="plus"></i>新建下载 <kbd>Ctrl N</kbd></button>
-              <button class="btn" id="empty-ext"><i data-icon="globe"></i>获取浏览器扩展</button>
-            </div>
           </div>
         </div>
         <aside class="inspector" id="inspector" hidden></aside>
@@ -191,6 +187,9 @@
         <section data-panel="browser" hidden>
           <h2>浏览器扩展</h2>
           <p class="lead">扩展会把浏览器的下载交给 SwiftDL，并带上 cookies，登录后的下载也能用；还会在视频上添加下载按钮。</p>
+          <div class="set-group">
+            <div class="set-row"><div class="sr-text"><b>获取浏览器扩展</b><span>打开安装引导，按步骤把扩展加到你的浏览器</span></div><button type="button" class="btn sm" id="set-ext-guide">打开引导</button></div>
+          </div>
           <div class="ext-status" id="ext-status"></div>
           <div class="set-group" id="browser-list"></div>
           <p class="set-note" id="ext-saveas" hidden>浏览器还是询问保存位置？在浏览器的下载设置里关掉「每次下载前询问保存位置」，这样就只由 SwiftDL 询问。</p>

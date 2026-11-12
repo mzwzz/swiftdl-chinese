@@ -232,9 +232,8 @@ function renderList() {
   $("empty").hidden = list.length > 0;
   if (!list.length) {
     const q = state.search.trim();
-    $("empty-title").textContent = q ? "没有结果" : state.items.length ? "这里没有内容" : "还没有下载";
+    $("empty-title").innerHTML = q ? "没有结果" : state.items.length ? "这里没有内容" : '新建下载 <kbd>Ctrl N</kbd>';
     $("empty-text").textContent = q ? `没有匹配“${q}”的下载。` : state.items.length ? "此视图中的下载会显示在这里。" : "粘贴一个链接、拖入本窗口，或在浏览器里开始下载。";
-    $("empty-actions").hidden = !!q || state.items.length > 0;
   }
   return list;
 }
@@ -559,10 +558,10 @@ $("nav").addEventListener("click", (e) => {
 });
 $("btn-pause-all").onclick = () => pause(visible().filter(isActive).map((i) => i.id));
 $("btn-resume-all").onclick = () => resume(visible().filter((i: Item) => i.status === "paused" || i.status === "error").map((i) => i.id));
-$("btn-add").onclick = $("empty-add").onclick = () => openComposer();
+$("btn-add").onclick = $("empty-new").onclick = () => openComposer();
 $("btn-palette").onclick = $("btn-search").onclick = () => openPalette();
 $("btn-settings").onclick = () => openSettings();
-$("empty-ext").onclick = () => openExtensionGuide();
+$("set-ext-guide").onclick = () => openExtensionGuide();
 $("w-min").onclick = () => appWindow?.minimize();
 $("w-max").onclick = () => appWindow?.toggleMaximize();
 $("w-close").onclick = () => appWindow?.close();
@@ -704,8 +703,10 @@ function openComposer(incoming?: ComposerInput) {
   setState("idle");
   dlg.showModal();
   $("add-url").focus();
+  // No automatic clipboard read here: WebView clipboard access makes macOS
+  // pop its system "Paste" bubble every time the dialog opens. Reading is
+  // left to the explicit "从剪贴板粘贴" button below.
   if (incoming?.url) probe();
-  else readClip().then((u) => { if (u && !$("add-url").value) { $("add-url").value = u; $("add-url").select(); probe(); } });
 }
 // Opt-in: switching back to SwiftDL after copying a download link offers to download it.
 let lastClip = "";
