@@ -388,8 +388,16 @@ view.addEventListener("click", async (e) => {
     case "details": details = !details; render(); break;
     case "pause": invoke("pause", { ids: [id] }); break;
     case "resume": layout = ""; invoke("resume", { ids: [id] }); break;
-    case "open": invoke("open_file", { id }); $("w-close").click(); break;
-    case "folder": invoke("open_folder", { id }); break;
+    case "open":
+      invoke("open_file", { id });
+      setTimeout(() => $("w-close").click(), 150);
+      break;
+    case "folder":
+      // 打开所在文件夹后，这个下载框就没用了，跟「打开」一样自动关掉（用户 2026-11-18 报的）。
+      // 先发出命令、稍等一拍再关，免得 webview 先死掉把请求掐了。
+      invoke("open_folder", { id });
+      setTimeout(() => $("w-close").click(), 150);
+      break;
     case "close": $("w-close").click(); break;
     case "cancel":
       // Ask twice instead of a second dialog: the button arms for 3 s.
