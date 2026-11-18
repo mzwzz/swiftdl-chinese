@@ -55,6 +55,10 @@ export const CATS: Record<string, Cat> = {
   图片: { color: "#f97316", icon: "image" },
   其他: { color: "#8b8f98", icon: "file" },
 };
+// 显示用的短名：存储值（也是下载子文件夹名）保持不变，只改界面上看到的字。
+const CAT_LABELS: Record<string, string> = { 压缩文件: "压缩" };
+export const catLabel = (name: string | null | undefined): string => CAT_LABELS[name ?? ""] || (name ?? "");
+
 export const catInfo = (name: string | null | undefined): Cat => CATS[name ?? ""] || CATS["其他"];
 
 /** The category a file name falls in, by extension (matches the backend). */

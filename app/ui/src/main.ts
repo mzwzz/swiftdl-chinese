@@ -4,7 +4,7 @@
 import "./styles.css";
 import { invoke, listen, $ } from "./api";
 import type { Item, Settings, IntegrationStatus, BrowserStatus, Incoming, ProbeInfo, Header, Status, Commands } from "./api";
-import { icon, CATS, catOf, parts, bytes, speed, dur, when, esc, host, segBar } from "./util";
+import { icon, CATS, catOf, catLabel, parts, bytes, speed, dur, when, esc, host, segBar } from "./util";
 
 const target = (e: Event) => e.target as HTMLElement;
 
@@ -150,7 +150,7 @@ function renderNav() {
   const failed = count(VIEWS.failed.test);
   if (failed || state.view === "failed") html += item("failed", "失败", icon("alert"), failed);
   html += `<button class="nav-sec ${state.typesOpen ? "" : "closed"}" data-toggle="types">分类 ${icon("chevDown")}</button>`;
-  if (state.typesOpen) for (const name of Object.keys(CATS)) html += item(name, name, typeIcon(name), count((i) => i.category === name));
+  if (state.typesOpen) for (const name of Object.keys(CATS)) html += item(name, catLabel(name), typeIcon(name), count((i) => i.category === name));
   if ($("nav").innerHTML !== html) $("nav").innerHTML = html;
 
   const active = state.items.filter((i) => i.status === "downloading");
@@ -171,7 +171,7 @@ function renderNav() {
 function renderHeader(list: Item[]) {
   const v = VIEWS[state.view];
   $("h-icon").innerHTML = v ? icon(v.icon) : typeIcon(state.view);
-  $("h-name").textContent = v ? v.name : state.view;
+  $("h-name").textContent = v ? v.name : catLabel(state.view);
   $("h-count").textContent = list.length ? String(list.length) : "";
   $("btn-pause-all").hidden = !list.some(isActive);
   $("btn-resume-all").hidden = !list.some((i) => i.status === "paused" || i.status === "error");
@@ -681,7 +681,7 @@ function paletteItems(q: string): PalLine[] {
   ].filter((a) => match(a.label));
   const views: PalItem[] = [
     ...Object.entries(VIEWS).map(([k, v]): PalItem => ({ icon: v.icon, label: `前往${v.name}`, run: () => { state.view = k; render(); } })),
-    ...Object.keys(CATS).map((c): PalItem => ({ type: c, label: `前往${c}`, run: () => { state.view = c; render(); } })),
+    ...Object.keys(CATS).map((c): PalItem => ({ type: c, label: `前往${catLabel(c)}`, run: () => { state.view = c; render(); } })),
   ].filter((a) => match(a.label));
   const dls = state.items.filter((i) => q && (i.filename.toLowerCase().includes(q) || i.url.toLowerCase().includes(q))).slice(0, 8)
     .map((i): PalItem => ({ status: i, label: i.filename, sub: STATUS[i.status], run: () => { state.view = "all"; select(i.id); } }));
@@ -779,7 +779,7 @@ function renderChips() {
   const folder = add.dir.split(/[\\/]/).filter(Boolean).slice(-2).join(" / ") || add.dir;
   $("add-chips").innerHTML = i ? [
     `<span class="chip">${icon("hash")}<span>${i.size != null ? bytes(i.size) : "未知大小"}</span></span>`,
-    `<span class="chip"><i class="dot" style="background:${(CATS[i.category] || CATS["其他"]).color}"></i><span>${esc(i.category)}</span></span>`,
+    `<span class="chip"><i class="dot" style="background:${(CATS[i.category] || CATS["其他"]).color}"></i><span>${esc(catLabel(i.category))}</span></span>`,
     i.resumable ? `<span class="chip ok">${icon("bolt")}<span>${state.settings?.connections || 8} 个连接</span></span>` : `<span class="chip warn">${icon("info")}<span>单连接，无法续传</span></span>`,
     `<button type="button" class="chip" id="add-folder" title="${esc(add.dir)}">${icon("folder")}<span>${esc(folder)}</span>${icon("chevDown")}</button>`,
   ].join("") : "";
@@ -879,7 +879,7 @@ function grabVisible(): Found[] {
 function renderGrab() {
   const list = grabVisible();
   const cats = ["File", ...Object.keys(CATS).filter((c) => c !== "Other" && grab.all.some((f) => looksLikeFile(f.name) && catOf(f.name) === c)), "All"];
-  $("grab-chips").innerHTML = cats.map((c) => `<button type="button" class="chip${c === grab.cat ? " on" : ""}" data-c="${c}"><span>${c === "File" ? "全部文件" : c === "All" ? "所有链接" : c}</span></button>`).join("");
+  $("grab-chips").innerHTML = cats.map((c) => `<button type="button" class="chip${c === grab.cat ? " on" : ""}" data-c="${c}"><span>${c === "File" ? "全部文件" : c === "All" ? "所有链接" : catLabel(c)}</span></button>`).join("");
   $("grab-list").innerHTML = list.map((f) => `<label class="grab-row"><input type="checkbox" data-u="${esc(f.url)}"${grab.picked.has(f.url) ? " checked" : ""}><span class="gn" title="${esc(f.url)}">${esc(f.name || f.url)}</span><span class="gh">${esc(host(f.url))}</span></label>`).join("") || `<p class="muted" style="padding:10px 12px">这里没有内容。</p>`;
   const n = grab.picked.size;
   $("grab-go").disabled = !n;

@@ -7,7 +7,7 @@ import "./styles.css";
 import "./download.css";
 import { invoke, listen, currentWindow, LogicalSize, $ } from "./api";
 import type { Item, Incoming, Header, MediaInfo, TorrentInfo, AddRequest, ProbeInfo, Settings, Quality } from "./api";
-import { icon, CATS, catOf, bytes, speed, dur, when, esc, host, catInfo, segBar } from "./util";
+import { icon, CATS, catOf, catLabel, bytes, speed, dur, when, esc, host, catInfo, segBar } from "./util";
 
 const win = currentWindow();
 
@@ -73,7 +73,7 @@ async function confirmView(token: number) {
     <div class="kv">
       <span class="k">地址</span><span class="v"><span title="${esc(inc.url)}">${esc(inc.url)}</span></span>
       <span class="k">大小</span><span class="v" id="c-size"><span class="spinner"></span><span class="muted">检查中…</span></span>
-      <span class="k">分类</span><span class="v"><select id="c-cat">${Object.keys(CATS).map((c) => `<option>${c}</option>`).join("")}</select></span>
+      <span class="k">分类</span><span class="v"><select id="c-cat">${Object.keys(CATS).map((c) => `<option value="${c}">${catLabel(c)}</option>`).join("")}</select></span>
       <span class="k">保存到</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">更改</button></span>
       <span class="k">SHA-256</span><span class="v"><input id="c-sum" spellcheck="false" placeholder="可选：粘贴校验值核对文件"></span>
     </div>
