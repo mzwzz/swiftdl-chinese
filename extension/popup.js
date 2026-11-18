@@ -44,14 +44,14 @@ async function main() {
 
   chrome.runtime.sendMessage({ type: "ping" }).then((r) => {
     $("status").className = `status ${r?.ok ? "ok" : "off"}`;
-    $("status").querySelector("span").textContent = r?.ok ? "Connected" : "Not connected";
+    $("status").querySelector("span").textContent = r?.ok ? "已连接" : "未连接";
     $("missing").hidden = !!r?.ok;
     if (!r?.ok) {
       const e = String(r?.error || "");
       // The browser's own words, in plain terms.
       $("why").textContent = /not found|forbidden|not allowed/i.test(e)
-        ? "This browser can't find SwiftDL's helper. Install SwiftDL with its installer (not just the .exe file), open it once, then reload this extension."
-        : e ? `The browser said: ${e}` : "Open the app once. If it's already open, restart the browser.";
+        ? "这个浏览器找不到 SwiftDL 的辅助程序。请用安装包安装 SwiftDL（不是只拷 .exe 文件），打开一次后重新加载扩展。"
+        : e ? `浏览器提示：${e}` : "先打开一次 SwiftDL；若已在运行，请重启浏览器。";
     }
     $("main").hidden = !r?.ok;
     $("open").hidden = !r?.ok;
@@ -67,12 +67,12 @@ async function main() {
   let html = files.map((m, i) => {
     const e = ext(m);
     const audio = /^audio/.test(m.mime) || /mp3|m4a|aac|ogg|opus|flac|wav/.test(e);
-    return `<div class="m"><span class="tag">${e.toUpperCase()}</span><span class="mt"><b>${audio ? "Audio" : "Video"}</b><span title="${esc(m.url)}">${m.size ? bytes(m.size) : esc(new URL(m.url).hostname)}</span></span><button class="dl" data-i="${i}" title="Download with SwiftDL">${DL_ICON}</button></div>`;
+    return `<div class="m"><span class="tag">${e.toUpperCase()}</span><span class="mt"><b>${audio ? "音频" : "视频"}</b><span title="${esc(m.url)}">${m.size ? bytes(m.size) : esc(new URL(m.url).hostname)}</span></span><button class="dl" data-i="${i}" title="用 SwiftDL 下载">${DL_ICON}</button></div>`;
   }).join("");
-  if (stream) html += `<div class="m"><span class="tag stream">${stream.kind.toUpperCase()}</span><span class="mt"><b>Stream</b><span>Choose the quality in SwiftDL</span></span><button class="dl" data-stream title="Download with SwiftDL">${DL_ICON}</button></div>`;
+  if (stream) html += `<div class="m"><span class="tag stream">${stream.kind.toUpperCase()}</span><span class="mt"><b>流媒体</b><span>画质在 SwiftDL 中选择</span></span><button class="dl" data-stream title="用 SwiftDL 下载">${DL_ICON}</button></div>`;
   // Video sites go through SwiftDL's quality picker, whatever the page loaded.
   if (host && VIDEO_SITE.test(host)) {
-    html = `<div class="m"><span class="tag">PAGE</span><span class="mt"><b>This video</b><span>Choose the quality in SwiftDL</span></span><button class="dl" data-page title="Download with SwiftDL">${DL_ICON}</button></div>`;
+    html = `<div class="m"><span class="tag">PAGE</span><span class="mt"><b>此视频</b><span>画质在 SwiftDL 中选择</span></span><button class="dl" data-page title="用 SwiftDL 下载">${DL_ICON}</button></div>`;
   }
   $("media").innerHTML = html;
   $("found").hidden = !html;

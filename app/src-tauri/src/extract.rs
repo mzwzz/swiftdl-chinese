@@ -73,14 +73,14 @@ fn untar(reader: impl std::io::Read, target: &Path) -> Result<()> {
 }
 
 fn un7z(archive: &Path, target: &Path) -> Result<()> {
-    let reader = sevenz_rust::SevenZReader::open(archive, sevenz_rust::Password::empty()).context("couldn't open the 7z file (it may be encrypted)")?;
+    let reader = sevenz_rust::SevenZReader::open(archive, sevenz_rust::Password::empty()).context("无法打开 7z 文件（可能已加密）")?;
     for entry in &reader.archive().files {
         let n = entry.name().replace('\\', "/");
         if n.starts_with('/') || n.split('/').any(|p| p == "..") || n.contains(':') {
-            bail!("the archive has a path that leaves its folder: {n}");
+            bail!("压缩包内含有跳出目标文件夹的路径：{n}");
         }
     }
-    sevenz_rust::decompress_file(archive, target).context("couldn't unpack the 7z file")
+    sevenz_rust::decompress_file(archive, target).context("无法解压 7z 文件")
 }
 
 #[cfg(test)]

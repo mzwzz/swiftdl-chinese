@@ -47,26 +47,26 @@ export const icon = (n: IconName): string =>
 
 export interface Cat { color: string; icon: string }
 export const CATS: Record<string, Cat> = {
-  Video: { color: "#8b5cf6", icon: "video" },
-  Music: { color: "#ec4899", icon: "music" },
-  Programs: { color: "#3b82f6", icon: "app" },
-  Compressed: { color: "#f59e0b", icon: "archive" },
-  Documents: { color: "#10b981", icon: "doc" },
-  Images: { color: "#f97316", icon: "image" },
-  Other: { color: "#8b8f98", icon: "file" },
+  视频: { color: "#8b5cf6", icon: "video" },
+  音乐: { color: "#ec4899", icon: "music" },
+  程序: { color: "#3b82f6", icon: "app" },
+  压缩文件: { color: "#f59e0b", icon: "archive" },
+  文档: { color: "#10b981", icon: "doc" },
+  图片: { color: "#f97316", icon: "image" },
+  其他: { color: "#8b8f98", icon: "file" },
 };
-export const catInfo = (name: string | null | undefined): Cat => CATS[name ?? ""] || CATS.Other;
+export const catInfo = (name: string | null | undefined): Cat => CATS[name ?? ""] || CATS["其他"];
 
 /** The category a file name falls in, by extension (matches the backend). */
 export function catOf(name: string | null | undefined): string {
   const e = (/\.([a-z0-9]{1,5})$/i.exec(name || "") || [])[1]?.toLowerCase() || "";
-  if (/^(zip|rar|7z|tar|gz|tgz|xz|bz2|zst|iso|img)$/.test(e)) return "Compressed";
-  if (/^(pdf|docx?|xlsx?|pptx?|odt|txt|rtf|epub|csv|md)$/.test(e)) return "Documents";
-  if (/^(mp3|wav|flac|aac|ogg|m4a|opus|wma)$/.test(e)) return "Music";
-  if (/^(mp4|mkv|avi|mov|webm|flv|wmv|m4v|mpe?g|3gp|ts)$/.test(e)) return "Video";
-  if (/^(exe|msi|dmg|pkg|deb|rpm|apk|appimage|msix|bat|jar)$/.test(e)) return "Programs";
-  if (/^(jpe?g|png|gif|webp|svg|bmp|heic|avif)$/.test(e)) return "Images";
-  return "Other";
+  if (/^(zip|rar|7z|tar|gz|tgz|xz|bz2|zst|iso|img)$/.test(e)) return "压缩文件";
+  if (/^(pdf|docx?|xlsx?|pptx?|odt|txt|rtf|epub|csv|md)$/.test(e)) return "文档";
+  if (/^(mp3|wav|flac|aac|ogg|m4a|opus|wma)$/.test(e)) return "音乐";
+  if (/^(mp4|mkv|avi|mov|webm|flv|wmv|m4v|mpe?g|3gp|ts)$/.test(e)) return "视频";
+  if (/^(exe|msi|dmg|pkg|deb|rpm|apk|appimage|msix|bat|jar)$/.test(e)) return "程序";
+  if (/^(jpe?g|png|gif|webp|svg|bmp|heic|avif)$/.test(e)) return "图片";
+  return "其他";
 }
 
 const UNITS = ["B", "KB", "MB", "GB", "TB"];
@@ -83,18 +83,18 @@ export function dur(sec: number): string {
   if (!isFinite(sec) || sec <= 0) return "—";
   sec = Math.ceil(sec);
   const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-  return h ? `${h}h ${m}m` : m ? `${m}m ${s}s` : `${s}s`;
+  return h ? `${h} 时 ${m} 分` : m ? `${m} 分 ${s} 秒` : `${s} 秒`;
 }
 /** A short, relative time: "Just now", "5m ago", "3:42 PM", "Yesterday", "Nov 1". */
 export function when(ms: number | null | undefined): string {
   if (!ms) return "";
   const d = new Date(ms), now = new Date();
   const mins = Math.round((now.getTime() - d.getTime()) / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "刚刚";
+  if (mins < 60) return `${mins} 分钟前`;
   if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   const y = new Date(now); y.setDate(now.getDate() - 1);
-  if (d.toDateString() === y.toDateString()) return "Yesterday";
+  if (d.toDateString() === y.toDateString()) return "昨天";
   return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 const ESC: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
