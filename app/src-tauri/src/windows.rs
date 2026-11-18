@@ -102,22 +102,32 @@ fn bring_to_front(w: &WebviewWindow) {
         let _ = w.set_focus();
         #[cfg(target_os = "macos")]
         {
-            // These small dialogs stay floating over every Space (including
-            // fullscreen apps) for their whole life, like IDM's windows.
-            // Re-assert the Space behavior and level periodically: the
-            // window toolkit re-applies its own always-on-top level async
-            // and would otherwise win the race against the first assert.
-            // Focus stays best-effort: keep asking until the window is key
-            // (activation granted, or the user clicked it), then stop.
-            loop {
+            // Re-assert the Space behaviour and level ONCE more: tao applies
+            // its own always-on-top level asynchronously, so the first assert
+            // can lose that race.
+            //
+            // It used to be an 800 ms loop for the window's whole life, and
+            // that caused two bugs (2026-11-18):
+            //   1. Every download window kept calling activate_app() whenever
+            //      it was not focused, so clicking another app (Doubao, Finder,
+            //      anything) handed focus to that app and SwiftDL snatched it
+            //      back within 0.8 s: clicks "didn't take" / felt unresponsive.
+            //   2. Re-setting the window level while the user was dragging a
+            //      dialog made the native drag lose its grip, so the window
+            //      jumped back to where it was and only then followed the
+            //      mouse again.
+            // Never turn this back into a loop. The dialogs are created with
+            // .always_on_top(true), and that is what keeps them floating.
+            // 两次足够（tao 的异步改层级发生在窗口刚显示时），之后收手。
+            for _ in 0..2 {
                 if !w.is_visible().unwrap_or(false) {
-                    return;
+                    break;
                 }
                 float_over_spaces(&w);
                 if !w.is_focused().unwrap_or(false) {
                     let _ = w.run_on_main_thread(activate_app);
                 }
-                std::thread::sleep(std::time::Duration::from_millis(800));
+                std::thread::sleep(std::time::Duration::from_millis(700));
             }
         }
         #[cfg(not(target_os = "macos"))]
@@ -155,7 +165,20 @@ pub fn open(app: &AppHandle, label: &str, query: &str, title: &str) -> tauri::Re
             .always_on_top(true)
             .build();
         match built {
-            Ok(w) => bring_to_front(&w),
+            Ok(w) => {
+                // 窗口拿到焦点时（用户点它、或拖动结束后）再确认一次浮动层级：
+                // 只在 Focused 事件上做，Moved 期间一次都不碰，免得打断原生拖动。
+                #[cfg(target_os = "macos")]
+                {
+                    let fw = w.clone();
+                    w.on_window_event(move |e| {
+                        if matches!(e, tauri::WindowEvent::Focused(true)) {
+                            float_over_spaces(&fw);
+                        }
+                    });
+                }
+                bring_to_front(&w)
+            }
             Err(e) => crate::log::line(&format!("could not open window {label}: {e:#}")),
         }
     });

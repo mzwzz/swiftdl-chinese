@@ -21,14 +21,32 @@ const whenFull = (ms: number | null) => {
 const view = $("view");
 
 // The window grows and shrinks to fit what it shows.
+// 拖动窗口时不再改尺寸：setSize 会打断 macOS 的原生拖动，
+// 窗口会先跳回原来的位置、再重新跟上鼠标（用户 2026-11-18 报的“回一跳”）。
+let dragging = false;
+let dragTimer: number | undefined;
 const fit = () => {
-  if (!win || !LogicalSize) return;
+  if (!win || !LogicalSize || dragging) return;
   // The card plus the 16px transparent margin on each side (for its shadow).
   const root = $("root");
   const h = Math.ceil(Math.max(root.getBoundingClientRect().height, root.scrollHeight)) + 32;
   // A resize that fails (or lands before the layout settles) must not leave the buttons cut off.
   Promise.resolve(win.setSize(new LogicalSize(552, Math.min(780, h)))).catch(() => setTimeout(fit, 400));
 };
+// 标题栏按下 = 开始拖动窗口；抬起后再补一次尺寸自适应。
+document.querySelector(".w-bar")?.addEventListener("mousedown", (e) => {
+  if ((e.target as HTMLElement).closest(".w-btn")) return;
+  dragging = true;
+  clearTimeout(dragTimer);
+  // 原生拖动时网页收不到 mouseup，用超时兜底解除。
+  dragTimer = window.setTimeout(() => { dragging = false; fit(); }, 3000);
+});
+window.addEventListener("mouseup", () => {
+  if (!dragging) return;
+  dragging = false;
+  clearTimeout(dragTimer);
+  window.setTimeout(fit, 150);
+});
 new ResizeObserver(fit).observe($("root"));
 // Again once the page and fonts have settled; some screens report their size late.
 window.addEventListener("load", () => [100, 400, 1200].forEach((t) => setTimeout(fit, t)));
