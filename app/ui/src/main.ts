@@ -231,7 +231,7 @@ function renderList() {
   $("empty").hidden = list.length > 0;
   if (!list.length) {
     const q = state.search.trim();
-    $("empty-title").innerHTML = q ? "没有结果" : state.items.length ? "这里没有内容" : '新建下载 <kbd>Ctrl N</kbd>';
+    $("empty-title").innerHTML = q ? "没有结果" : state.items.length ? "这里没有内容" : '新建下载 <kbd>⌘N</kbd>';
     $("empty-text").textContent = q ? `没有匹配“${q}”的下载。` : state.items.length ? "此视图中的下载会显示在这里。" : "粘贴一个链接、拖入本窗口，或在浏览器里开始下载。";
   }
   return list;
@@ -606,7 +606,9 @@ $("nav").addEventListener("click", (e) => {
 $("btn-pause-all").onclick = () => pause(visible().filter(isActive).map((i) => i.id));
 $("btn-resume-all").onclick = () => resume(visible().filter((i: Item) => i.status === "paused" || i.status === "error").map((i) => i.id));
 $("btn-add").onclick = $("empty-new").onclick = () => openComposer();
-$("btn-palette").onclick = $("btn-search").onclick = () => openPalette();
+// 侧栏的放大镜按钮已去掉（与右侧搜索框重复，用户 2026-11-18 要求）；
+// 命令面板仍可用右侧搜索框或 Ctrl/⌘ K 打开。
+$("btn-search").onclick = () => openPalette();
 $("btn-settings").onclick = () => openSettings();
 $("set-ext-guide").onclick = () => openExtensionGuide();
 
@@ -672,11 +674,11 @@ function paletteItems(q: string): PalLine[] {
   const match = (s: string) => !q || s.toLowerCase().includes(q);
   const out: PalLine[] = [];
   const actions: PalItem[] = [
-    { icon: "plus", label: "新建下载", keys: ["Ctrl", "N"], run: () => openComposer() },
+    { icon: "plus", label: "新建下载", keys: ["⌘", "N"], run: () => openComposer() },
     { icon: "pause", label: "暂停全部下载", run: () => pause(state.items.filter(isActive).map((i) => i.id)) },
     { icon: "play", label: "恢复全部下载", run: () => resume(state.items.filter((i) => i.status === "paused" || i.status === "error").map((i) => i.id)) },
     ...LIMITS.map((k): PalItem => ({ icon: "gauge", label: k ? `限速到 ${bytes(k * 1024)}/s` : "取消限速", run: () => setLimit(k) })),
-    { icon: "settings", label: "打开设置", keys: ["Ctrl", ","], run: () => openSettings() },
+    { icon: "settings", label: "打开设置", keys: ["⌘", ","], run: () => openSettings() },
     { icon: "globe", label: "配置浏览器扩展", run: () => openExtensionGuide() },
   ].filter((a) => match(a.label));
   const views: PalItem[] = [

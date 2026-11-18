@@ -10,8 +10,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="side-top" data-tauri-drag-region>
-        <button class="sq-btn" id="btn-palette" title="搜索与命令 (Ctrl K)"><i data-icon="search"></i></button>
-        <button class="sq-btn bordered" id="btn-add" title="新建下载 (Ctrl N)"><i data-icon="compose"></i></button>
+        <button class="sq-btn bordered" id="btn-add" title="新建下载 (⌘N)"><i data-icon="compose"></i></button>
       </div>
       <nav class="nav" id="nav"></nav>
       <div class="side-bottom">
@@ -32,7 +31,7 @@
         <div class="h-actions">
           <button class="ghost-btn" id="btn-pause-all"><i data-icon="pause"></i>全部暂停</button>
           <button class="ghost-btn" id="btn-resume-all"><i data-icon="play"></i>全部恢复</button>
-          <button class="search-btn" id="btn-search"><i data-icon="search"></i><span>搜索</span><kbd>Ctrl K</kbd></button>
+          <button class="search-btn" id="btn-search"><i data-icon="search"></i><span>搜索</span><kbd>⌘K</kbd></button>
         </div>
       </header>
       <div class="body">
@@ -40,8 +39,8 @@
           <div class="onboard" id="onboard" hidden></div>
           <div id="rows"></div>
           <div class="empty" id="empty" hidden>
-            <button class="empty-icon" id="empty-new" title="新建下载 (Ctrl N)"><i data-icon="download"></i></button>
-            <h2 id="empty-title">新建下载 <kbd>Ctrl N</kbd></h2>
+            <button class="empty-icon" id="empty-new" title="新建下载 (⌘N)"><i data-icon="download"></i></button>
+            <h2 id="empty-title">新建下载 <kbd>⌘N</kbd></h2>
             <p id="empty-text">粘贴一个链接、拖入本窗口，或在浏览器里开始下载。</p>
           </div>
         </div>
@@ -83,7 +82,7 @@
         <button type="button" class="ghost-btn" id="add-grab" title="列出网页里链接的文件"><i data-icon="search"></i>在页面里找文件</button>
         <span class="grow"></span>
         <button type="button" class="btn" id="add-later">稍后下载</button>
-        <button type="submit" class="btn primary" id="add-start">下载 <kbd>Ctrl ↵</kbd></button>
+        <button type="submit" class="btn primary" id="add-start">下载 <kbd>⌘↵</kbd></button>
       </div>
     </form>
   </dialog>
