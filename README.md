@@ -1,3 +1,15 @@
+> **来源声明 · 非官方简体中文版**
+>
+> 本项目是 **[harshsinghsv/swiftdl](https://github.com/harshsinghsv/swiftdl)** 的简体中文汉化版，
+> 由中文社区维护者在不改变核心功能的前提下做了界面汉化与少量 macOS 适配。
+> **原作者：harshsinghsv**（上游项目采用 MIT 协议）。
+> 本仓库保留原项目的全部版权与许可声明，具体改动范围见 [NOTICE.md](NOTICE.md)。
+> 感谢原作者的开源工作——需要英文原版或最新功能，请前往上游仓库。
+>
+> This is an **unofficial Simplified Chinese localization** of
+> [harshsinghsv/swiftdl](https://github.com/harshsinghsv/swiftdl) (MIT), by **harshsinghsv**.
+> All original copyright and license notices are retained. See [NOTICE.md](NOTICE.md).
+
 <div align="center">
 
 <img src="app/icon.svg" width="88" alt="SwiftDL" />
