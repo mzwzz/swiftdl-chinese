@@ -7,6 +7,9 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    # 中文版自己的 tag（如 v0.4.2-zh.1）不要触发上游这套多平台构建：
+    # 汉化包的产物由本地编译后手工上传，CI 构建只会把未定制的安装包塞进 Release。
+    tags-ignore: ["*-zh*"]
   workflow_dispatch:
     inputs:
       tag:
