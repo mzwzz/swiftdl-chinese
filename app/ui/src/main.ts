@@ -1169,7 +1169,11 @@ async function boot() {
   // once; after that a slow check is enough. Also on coming back to the window.
   let tick = 0;
   setInterval(() => { if (!state.integration?.lastSeen || ++tick % 8 === 0) loadIntegration(); }, 2000);
-  window.addEventListener("focus", () => loadIntegration());
+  window.addEventListener("focus", () => {
+    loadIntegration();
+    // 窗口在后台期间攒下的渲染请求，回到前台时补上（见 ingest 里的 renderPending）。
+    if (renderPending) { renderPending = false; render(); }
+  });
   await listen("downloads", (e) => ingest(e.payload));
   // A one-time setting finished (when-done fired, or the queue's start time came).
   await listen("settings", (e) => { state.settings = e.payload; if ($("dlg-settings").open) openSettings(); });
@@ -1184,5 +1188,10 @@ async function boot() {
   // 拖窗口边缘时 resize 每秒能触发几十次，整页重绘扛不住；合并成一次。
   let resizeTimer = 0;
   addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = window.setTimeout(render, 80); });
+  // Tauri 的主窗口是"先隐藏、显示完再让 WebView 跑起来"，首次 ingest 可能落在
+  // document.hidden 期间被跳过（历史 bug：启动后列表全空）。这里延迟补一次。
+  setTimeout(() => {
+    if (renderPending || !$("rows").children.length) { renderPending = false; render(); }
+  }, 350);
 }
 boot();
