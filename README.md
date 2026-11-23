@@ -9,6 +9,9 @@
 > This is an **unofficial Simplified Chinese localization** of
 > [harshsinghsv/swiftdl](https://github.com/harshsinghsv/swiftdl) (MIT), by **harshsinghsv**.
 > All original copyright and license notices are retained. See [NOTICE.md](NOTICE.md).
+>
+> **仅供个人学习使用**：请仅下载你有权获取的内容，遵守当地法律与目标网站的服务条款；
+> 本仓库不包含任何 DRM 破解或绕过付费的功能。
 
 <div align="center">
 
