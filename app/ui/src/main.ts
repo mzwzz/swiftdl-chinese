@@ -62,7 +62,10 @@ const settings = (): Settings => state.settings as Settings;
 interface View { name: string; icon: string; test: (i: Item) => boolean }
 const VIEWS: Record<string, View> = {
   all: { name: "全部下载", icon: "inbox", test: () => true },
-  active: { name: "进行中", icon: "arrowDown", test: (i) => i.status !== "completed" && i.status !== "error" },
+  // 进行中只算真正在跑的（下载中 + 排队中）；暂停的单独归到「已暂停」，
+  // 否则同一个下载会同时出现在两个分类里（用户 2026-11-23 要求加「已暂停」）。
+  active: { name: "进行中", icon: "arrowDown", test: (i) => isActive(i) },
+  paused: { name: "已暂停", icon: "pause", test: (i) => i.status === "paused" },
   completed: { name: "已完成", icon: "doneCircle", test: (i) => i.status === "completed" },
   failed: { name: "失败", icon: "alert", test: (i) => i.status === "error" },
 };
@@ -146,6 +149,8 @@ function renderNav() {
     `<button class="nav-item ${state.view === view ? "on" : ""}" data-view="${view}"><span class="ni-icon">${ic}</span><span class="ni-label">${label}</span>${extra}<span class="ni-count">${n || ""}</span></button>`;
   let html = item("all", "全部下载", icon("inbox"), state.items.length) +
     item("active", "进行中", icon("arrowDown"), count(VIEWS.active.test), live ? '<span class="ni-live"></span>' : "") +
+    // 常驻显示（没有暂停项时只显示空计数），位置固定，分类不会上下跳。
+    item("paused", "已暂停", icon("pause"), count(VIEWS.paused.test)) +
     item("completed", "已完成", icon("doneCircle"), count(VIEWS.completed.test));
   const failed = count(VIEWS.failed.test);
   if (failed || state.view === "failed") html += item("failed", "失败", icon("alert"), failed);
@@ -1120,8 +1125,20 @@ $("form-settings").addEventListener("submit", async (e) => {
 });
 
 // ---------- data ----------
+let renderPending = false;
+// 窗口在后台（最小化、被别的 App 盖住、开盖合盖）时就别重绘了：数据照收，画面等回来再补一次。
+// 这是纯省电/省 CPU 的优化，不影响任何显示结果。
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && renderPending) { renderPending = false; render(); }
+});
+
 function ingest(items: Item[]) {
   state.items = items;
+  // 下载被删掉后，它的速度历史没人再读，顺手清掉，免得越跑越占内存。
+  if (state.speedHist.size > items.length) {
+    const ids = new Set(items.map((i) => i.id));
+    for (const k of [...state.speedHist.keys()]) if (!ids.has(k)) state.speedHist.delete(k);
+  }
   let total = 0;
   for (const it of items) {
     if (it.status !== "downloading") continue;
@@ -1133,6 +1150,7 @@ function ingest(items: Item[]) {
   }
   state.totalHist.push(total);
   if (state.totalHist.length > HISTORY) state.totalHist.shift();
+  if (document.hidden) { renderPending = true; return; }
   render();
 }
 async function boot() {
@@ -1157,12 +1175,14 @@ async function boot() {
   await listen("settings", (e) => { state.settings = e.payload; if ($("dlg-settings").open) openSettings(); });
   await listen("incoming", () => invoke("get_state").then((s) => { state.pending.push(...s.pending); nextPending(); }));
   setInterval(() => {
-    if (!state.items.some((i) => i.status === "downloading")) {
-      state.totalHist.push(0);
-      if (state.totalHist.length > HISTORY) state.totalHist.shift();
-      areaChart($("net-graph"), state.totalHist);
-    }
+    if (state.items.some((i) => i.status === "downloading")) return;   // 有下载时由数据推送驱动
+    if (state.totalHist.every((v) => v === 0)) return;                 // 曲线已归零到底，不必再重画
+    state.totalHist.push(0);
+    if (state.totalHist.length > HISTORY) state.totalHist.shift();
+    areaChart($("net-graph"), state.totalHist);
   }, 500);
-  addEventListener("resize", () => render());
+  // 拖窗口边缘时 resize 每秒能触发几十次，整页重绘扛不住；合并成一次。
+  let resizeTimer = 0;
+  addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = window.setTimeout(render, 80); });
 }
 boot();
