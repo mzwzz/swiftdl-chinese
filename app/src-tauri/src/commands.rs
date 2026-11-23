@@ -36,7 +36,8 @@ pub fn get_state(m: Mgr) -> AppState {
 }
 
 #[tauri::command]
-pub async fn probe_url(m: Mgr<'_>, url: String, headers: Vec<(String, String)>) -> Result<ProbeInfo, String> {
+pub async fn probe_url(m: Mgr<'_>, url: String, mut headers: Vec<(String, String)>) -> Result<ProbeInfo, String> {
+    crate::manager::ensure_baidu_ua(&url, &mut headers);
     if crate::media::is_spotify(url.trim()) {
         return Err(crate::media::SPOTIFY_MSG.into());
     }

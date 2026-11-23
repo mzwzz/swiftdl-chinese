@@ -257,7 +257,8 @@ impl DownloadManager {
         }
     }
 
-    pub fn add(self: &Arc<Self>, req: AddRequest) -> u64 {
+    pub fn add(self: &Arc<Self>, mut req: AddRequest) -> u64 {
+        ensure_baidu_ua(&req.url, &mut req.headers);
         let filename = req.filename.trim().to_string();
         let path = swiftdl_engine::resolve_dest(&req.dir, &filename);
         let id = {
@@ -1079,6 +1080,37 @@ mod checksum_tests {
     }
 }
 
+/// Baidu's netdisk CDN serves its download links only to its own client
+/// identity (`pan.baidu.com`); any other user agent gets the slowest tier,
+/// and files over 50 MiB are refused outright. Links like
+/// `https://d.pcs.baidu.com/...` or `https://*.baidupcs.com/...` therefore
+/// always go out with that identity, unless the caller set one already.
+/// The host of a URL, lowercased, without port and credentials. A tiny parser
+/// is enough here and keeps the app crate free of a direct `url` dependency.
+fn host_of(url: &str) -> Option<String> {
+    let rest = url.split_once("://")?.1;
+    let authority = rest.split(['/', '?', '#']).next()?;
+    let host = authority.rsplit_once('@').map(|(_, h)| h).unwrap_or(authority);
+    let host = host.split(':').next().unwrap_or(host);
+    Some(host.to_ascii_lowercase())
+}
+
+pub(crate) fn ensure_baidu_ua(url: &str, headers: &mut Vec<(String, String)>) {
+    let is_baidu = host_of(url.trim()).is_some_and(|host| {
+        host == "pcs.baidu.com"
+            || host == "baidupcs.com"
+            || host.ends_with(".pcs.baidu.com")
+            || host.ends_with(".baidupcs.com")
+    });
+    if !is_baidu {
+        return;
+    }
+    let has_ua = headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("user-agent"));
+    if !has_ua {
+        headers.push(("User-Agent".to_string(), "pan.baidu.com".to_string()));
+    }
+}
+
 /// The quality a default means: "audio" is sound only, "best" the first (highest)
 /// video, "high" the best up to 1080p that isn't HDR.
 fn pick_quality(qs: &[crate::media::Quality], mode: &str) -> Option<usize> {
@@ -1130,5 +1162,41 @@ mod video_default_tests {
         assert_eq!(clean_name("a/b: c*d?"), "a b c d");
         assert_eq!(clean_name("Version 2.0"), "Version 2.0", "a long tail after the dot isn't an extension");
         assert_eq!(clean_name("  "), "video");
+    }
+}
+
+#[cfg(test)]
+mod baidu_ua_tests {
+    use super::ensure_baidu_ua;
+
+    #[test]
+    fn injects_for_pcs_baidu() {
+        let mut h = vec![];
+        ensure_baidu_ua("https://d.pcs.baidu.com/file/xyz?fid=1", &mut h);
+        assert_eq!(h, vec![("User-Agent".to_string(), "pan.baidu.com".to_string())]);
+    }
+
+    #[test]
+    fn injects_for_baidupcs() {
+        let mut h = vec![];
+        ensure_baidu_ua("https://d112.baidupcs.com/file/abc?dstime=1", &mut h);
+        assert_eq!(h, vec![("User-Agent".to_string(), "pan.baidu.com".to_string())]);
+    }
+
+    #[test]
+    fn keeps_existing_user_agent() {
+        let mut h = vec![("User-Agent".to_string(), "Mozilla/5.0".to_string())];
+        ensure_baidu_ua("https://d.pcs.baidu.com/file/xyz", &mut h);
+        assert_eq!(h, vec![("User-Agent".to_string(), "Mozilla/5.0".to_string())]);
+    }
+
+    #[test]
+    fn ignores_other_hosts() {
+        let mut h = vec![];
+        ensure_baidu_ua("https://github.com/rust-lang/rust/archive/main.tar.gz", &mut h);
+        assert!(h.is_empty());
+        let mut h2 = vec![];
+        ensure_baidu_ua("https://evil-pcs.baidu.com.example.com/file", &mut h2);
+        assert!(h2.is_empty(), "a lookalike domain must not match");
     }
 }

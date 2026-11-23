@@ -787,7 +787,7 @@ function renderChips() {
   $("add-chips").innerHTML = i ? [
     `<span class="chip">${icon("hash")}<span>${i.size != null ? bytes(i.size) : "未知大小"}</span></span>`,
     `<span class="chip"><i class="dot" style="background:${(CATS[i.category] || CATS["其他"]).color}"></i><span>${esc(catLabel(i.category))}</span></span>`,
-    i.resumable ? `<span class="chip ok">${icon("bolt")}<span>${state.settings?.connections || 8} 个连接</span></span>` : `<span class="chip warn">${icon("info")}<span>单连接，无法续传</span></span>`,
+    i.resumable ? `<span class="chip ok">${icon("bolt")}<span>${state.settings?.connections || 16} 个连接</span></span>` : `<span class="chip warn">${icon("info")}<span>单连接，无法续传</span></span>`,
     `<button type="button" class="chip" id="add-folder" title="${esc(add.dir)}">${icon("folder")}<span>${esc(folder)}</span>${icon("chevDown")}</button>`,
   ].join("") : "";
 }
@@ -1094,7 +1094,7 @@ $("form-settings").addEventListener("submit", async (e) => {
   await saveSettings({
     downloadDir: setDir || settings().downloadDir,
     sortIntoCategories: $("set-sort").checked,
-    connections: clamp($("set-conns").value, 1, 32, 8),
+    connections: clamp($("set-conns").value, 1, 32, 16),
     maxConcurrent: clamp($("set-concurrent").value, 1, 10, 3),
     speedLimitKib: setLimitKib,
     askBeforeDownload: $("set-ask").checked,
