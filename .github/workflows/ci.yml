@@ -1,9 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
+  # 汉化仓库不跟随上游每次推送跑 CI（会因文案/断言差异失败），改为需要时手动触发。
+  workflow_dispatch:
 
 jobs:
   test:

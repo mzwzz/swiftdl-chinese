@@ -1,3 +1,21 @@
+> **来源声明 · 非官方简体中文版**
+>
+> 本项目是 **[harshsinghsv/swiftdl](https://github.com/harshsinghsv/swiftdl)** 的简体中文汉化版，
+> 由中文社区维护者在不改变核心功能的前提下做了界面汉化与少量 macOS 适配。
+> **原作者：harshsinghsv**（上游项目采用 MIT 协议）。
+> 本仓库保留原项目的全部版权与许可声明，具体改动范围见 [NOTICE.md](NOTICE.md)。
+> 感谢原作者的开源工作——需要英文原版或最新功能，请前往上游仓库。
+>
+> This is an **unofficial Simplified Chinese localization** of
+> [harshsinghsv/swiftdl](https://github.com/harshsinghsv/swiftdl) (MIT), by **harshsinghsv**.
+> All original copyright and license notices are retained. See [NOTICE.md](NOTICE.md).
+>
+> **仅供个人学习使用**：请仅下载你有权获取的内容，遵守当地法律与目标网站的服务条款；
+> 本仓库不包含任何 DRM 破解或绕过付费的功能。
+>
+> **👉 [中文汉化说明 README-zh.md](README-zh.md)** —— 汉化范围、界面截图、安装与快捷键都在里面。
+> 下面这份英文 README 与截图来自上游原版，保留以便对照。
+
 <div align="center">
 
 <img src="app/icon.svg" width="88" alt="SwiftDL" />

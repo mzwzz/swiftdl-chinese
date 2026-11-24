@@ -143,7 +143,7 @@ fn call(method: &str, params: &[Value], be: &dyn Backend, secret: &str) -> Resul
             Some(t) if !secret.is_empty() && t == secret => {
                 params.remove(0);
             }
-            _ => return Err((1, "Unauthorized".into())),
+            _ => return Err((1, "未授权".into())),
         }
     }
     let items = be.items();
@@ -162,9 +162,9 @@ fn call(method: &str, params: &[Value], be: &dyn Backend, secret: &str) -> Resul
             })
         }
         "aria2.addUri" => {
-            let url = params.first().and_then(Value::as_array).and_then(|a| a.first()).and_then(Value::as_str).ok_or((1, "No address given".to_string()))?;
+            let url = params.first().and_then(Value::as_array).and_then(|a| a.first()).and_then(Value::as_str).ok_or((1, "没有提供地址".to_string()))?;
             if !(url.starts_with("http://") || url.starts_with("https://") || url.starts_with("ftp://") || url.starts_with("magnet:")) {
-                return Err((1, "Only http, https, ftp and magnet addresses are supported".into()));
+                return Err((1, "只支持 http、https、ftp 和 magnet 地址".into()));
             }
             let opts = params.get(1).and_then(Value::as_object);
             let text = |k: &str| opts.and_then(|o| o.get(k)).and_then(Value::as_str);
@@ -213,7 +213,7 @@ fn call(method: &str, params: &[Value], be: &dyn Backend, secret: &str) -> Resul
                 }
             }).collect())
         }
-        _ => return Err((1, format!("Method not found: {method}"))),
+        _ => return Err((1, format!("找不到方法：{method}"))),
     })
 }
 

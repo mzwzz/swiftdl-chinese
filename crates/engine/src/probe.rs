@@ -49,7 +49,7 @@ pub async fn probe(client: &Client, url: &str, headers: &header::HeaderMap) -> R
 
     let status = resp.status();
     if !status.is_success() {
-        bail!("server returned {status}");
+        bail!("服务器返回 {status}");
     }
 
     let h = resp.headers();
@@ -76,7 +76,7 @@ pub async fn probe(client: &Client, url: &str, headers: &header::HeaderMap) -> R
     let attachment = header_str(h, header::CONTENT_DISPOSITION).is_some_and(|d| d.to_ascii_lowercase().contains("attachment"));
     let wants_html = [".html", ".htm", ".xhtml"].iter().any(|e| filename.to_ascii_lowercase().ends_with(e));
     if ctype.starts_with("text/html") && !attachment && !wants_html {
-        bail!("This link opens a web page, not a file. The site may need you to sign in or confirm first.");
+        bail!("此链接是网页而非文件。该网站可能需要登录或先确认。");
     }
 
     Ok(RemoteFile {

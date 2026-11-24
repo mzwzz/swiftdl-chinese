@@ -32,14 +32,69 @@ pub fn polish(window: &WebviewWindow) {
 /// Card width plus the transparent margin the page uses for its shadow.
 const WINDOW_WIDTH: f64 = 520.0 + 2.0 * 16.0;
 
+/// macOS: activate the app itself, like a Dock click or `open` would. The
+/// app is usually a background process when the browser hands over a
+/// download, and macOS won't raise or focus a background process's windows
+/// (nor hand them the keyboard) until the app is active. Uses the modern
+/// `NSRunningApplication` API, since `NSApp activateIgnoringOtherApps:` is
+/// deprecated. Must run on the main thread.
+#[cfg(target_os = "macos")]
+pub fn activate_app() {
+    use objc2_app_kit::{NSApplicationActivationOptions, NSRunningApplication};
+    unsafe {
+        let _ = NSRunningApplication::currentApplication()
+            .activateWithOptions(NSApplicationActivationOptions::ActivateIgnoringOtherApps);
+    }
+}
+
+/// macOS: make a window visible on every Space, including over fullscreen
+/// apps. A normal window — even a floating one — belongs to the Space it
+/// opened on, so while the browser runs fullscreen the download dialog
+/// opens in another Space and stays invisible: exactly "not coming to the
+/// front". CanJoinAllSpaces + FullScreenAuxiliary lets the dialog follow
+/// the user into the fullscreen Space. Must run on the main thread.
+#[cfg(target_os = "macos")]
+fn float_over_spaces(w: &WebviewWindow) {
+    use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior};
+    let handle = w.clone();
+    let inner = w.clone();
+    let _ = handle.run_on_main_thread(move || {
+        let Ok(ns) = inner.ns_window() else {
+            crate::log::line("could not float over Spaces: no ns_window yet");
+            return;
+        };
+        unsafe {
+            let win: &NSWindow = &*(ns.cast::<NSWindow>());
+            win.setCollectionBehavior(
+                NSWindowCollectionBehavior::CanJoinAllSpaces | NSWindowCollectionBehavior::FullScreenAuxiliary,
+            );
+            // A plain floating level (~3-5) is not admitted into another
+            // app's fullscreen Space on modern macOS; modal-panel level (8,
+            // where helpers like translation popovers live) is. Re-asserted
+            // periodically, because the window toolkit re-applies its own
+            // always-on-top level asynchronously and would win the race.
+            win.setLevel(8); // kCGModalPanelWindowLevel
+        }
+    });
+}
+
 /// Puts a window in front of whatever the user is doing, like IDM's dialogs.
 /// Windows only lets a background app flash its taskbar button, but a
 /// window that is briefly "always on top" still appears above everything;
 /// it then drops back to a normal window, staying in front.
 fn bring_to_front(w: &WebviewWindow) {
     let _ = w.unminimize();
+    // macOS: activate the app before ordering the window front. The window
+    // can be shown above the browser either way, but only an active app
+    // takes the keyboard and pulls its Space to the front.
+    #[cfg(target_os = "macos")]
+    {
+        let _ = w.run_on_main_thread(activate_app);
+    }
     let _ = w.show();
     let _ = w.set_always_on_top(true);
+    #[cfg(target_os = "macos")]
+    float_over_spaces(w);
     let _ = w.set_focus();
     // Linux desktops refuse to let a background app take focus, so also ask the
     // shell to point at the window (#24), and leave the "New download" dialog
@@ -55,6 +110,37 @@ fn bring_to_front(w: &WebviewWindow) {
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(600));
         let _ = w.set_focus();
+        #[cfg(target_os = "macos")]
+        {
+            // Re-assert the Space behaviour and level ONCE more: tao applies
+            // its own always-on-top level asynchronously, so the first assert
+            // can lose that race.
+            //
+            // It used to be an 800 ms loop for the window's whole life, and
+            // that caused two bugs (2026-11-18):
+            //   1. Every download window kept calling activate_app() whenever
+            //      it was not focused, so clicking another app (Doubao, Finder,
+            //      anything) handed focus to that app and SwiftDL snatched it
+            //      back within 0.8 s: clicks "didn't take" / felt unresponsive.
+            //   2. Re-setting the window level while the user was dragging a
+            //      dialog made the native drag lose its grip, so the window
+            //      jumped back to where it was and only then followed the
+            //      mouse again.
+            // Never turn this back into a loop. The dialogs are created with
+            // .always_on_top(true), and that is what keeps them floating.
+            // 两次足够（tao 的异步改层级发生在窗口刚显示时），之后收手。
+            for _ in 0..2 {
+                if !w.is_visible().unwrap_or(false) {
+                    break;
+                }
+                float_over_spaces(&w);
+                if !w.is_focused().unwrap_or(false) {
+                    let _ = w.run_on_main_thread(activate_app);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(700));
+            }
+        }
+        #[cfg(not(target_os = "macos"))]
         let _ = w.set_always_on_top(false);
     });
 }
@@ -89,7 +175,20 @@ pub fn open(app: &AppHandle, label: &str, query: &str, title: &str) -> tauri::Re
             .always_on_top(true)
             .build();
         match built {
-            Ok(w) => bring_to_front(&w),
+            Ok(w) => {
+                // 窗口拿到焦点时（用户点它、或拖动结束后）再确认一次浮动层级：
+                // 只在 Focused 事件上做，Moved 期间一次都不碰，免得打断原生拖动。
+                #[cfg(target_os = "macos")]
+                {
+                    let fw = w.clone();
+                    w.on_window_event(move |e| {
+                        if matches!(e, tauri::WindowEvent::Focused(true)) {
+                            float_over_spaces(&fw);
+                        }
+                    });
+                }
+                bring_to_front(&w)
+            }
             Err(e) => crate::log::line(&format!("could not open window {label}: {e:#}")),
         }
     });

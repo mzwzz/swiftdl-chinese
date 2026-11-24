@@ -250,14 +250,15 @@ impl DownloadManager {
     /// Where a file of this category goes by default.
     pub fn default_dir(&self, category: &str) -> PathBuf {
         let s = self.settings();
-        if s.sort_into_categories && category != "Other" {
+        if s.sort_into_categories && category != "其他" {
             s.download_dir.join(category)
         } else {
             s.download_dir
         }
     }
 
-    pub fn add(self: &Arc<Self>, req: AddRequest) -> u64 {
+    pub fn add(self: &Arc<Self>, mut req: AddRequest) -> u64 {
+        ensure_baidu_ua(&req.url, &mut req.headers);
         let filename = req.filename.trim().to_string();
         let path = swiftdl_engine::resolve_dest(&req.dir, &filename);
         let id = {
@@ -559,7 +560,7 @@ impl DownloadManager {
             g.confirms.insert(token, inc);
             token
         };
-        if let Err(e) = crate::windows::open(&self.app, &format!("new-{token}"), &format!("confirm={token}"), "New download") {
+        if let Err(e) = crate::windows::open(&self.app, &format!("new-{token}"), &format!("confirm={token}"), "新建下载") {
             crate::log::line(&format!("could not open the New download window: {e:#}"));
         }
     }
@@ -771,7 +772,7 @@ impl DownloadManager {
         }
         if let Some(name) = notify {
             use tauri_plugin_notification::NotificationExt;
-            let _ = self.app.notification().builder().title("Download complete").body(name).show();
+            let _ = self.app.notification().builder().title("下载完成").body(name).show();
         }
         if let Some(path) = unpack {
             let app = self.app.clone();
@@ -1017,15 +1018,15 @@ pub fn to_header_map(headers: &[(String, String)]) -> HeaderMap {
 pub fn category_for(filename: &str) -> &'static str {
     let ext = Path::new(filename).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
     match ext.as_str() {
-        "zip" | "rar" | "7z" | "tar" | "gz" | "tgz" | "xz" | "bz2" | "zst" | "iso" | "img" => "Compressed",
+        "zip" | "rar" | "7z" | "tar" | "gz" | "tgz" | "xz" | "bz2" | "zst" | "iso" | "img" => "压缩文件",
         "pdf" | "doc" | "docx" | "xls" | "xlsx" | "ppt" | "pptx" | "odt" | "txt" | "rtf" | "epub" | "csv" | "md" => {
-            "Documents"
+            "文档"
         }
-        "mp3" | "wav" | "flac" | "aac" | "ogg" | "m4a" | "opus" | "wma" => "Music",
-        "mp4" | "mkv" | "avi" | "mov" | "webm" | "flv" | "wmv" | "m4v" | "mpg" | "mpeg" | "3gp" | "ts" => "Video",
-        "exe" | "msi" | "dmg" | "pkg" | "deb" | "rpm" | "apk" | "appimage" | "msix" | "bat" | "jar" => "Programs",
-        "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg" | "bmp" | "heic" | "avif" => "Images",
-        _ => "Other",
+        "mp3" | "wav" | "flac" | "aac" | "ogg" | "m4a" | "opus" | "wma" => "音乐",
+        "mp4" | "mkv" | "avi" | "mov" | "webm" | "flv" | "wmv" | "m4v" | "mpg" | "mpeg" | "3gp" | "ts" => "视频",
+        "exe" | "msi" | "dmg" | "pkg" | "deb" | "rpm" | "apk" | "appimage" | "msix" | "bat" | "jar" => "程序",
+        "jpg" | "jpeg" | "png" | "gif" | "webp" | "svg" | "bmp" | "heic" | "avif" => "图片",
+        _ => "其他",
     }
 }
 
@@ -1076,6 +1077,37 @@ mod checksum_tests {
         std::fs::write(&p, b"abc").unwrap();
         assert_eq!(super::sha256_file(&p).unwrap(), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
         let _ = std::fs::remove_file(p);
+    }
+}
+
+/// Baidu's netdisk CDN serves its download links only to its own client
+/// identity (`pan.baidu.com`); any other user agent gets the slowest tier,
+/// and files over 50 MiB are refused outright. Links like
+/// `https://d.pcs.baidu.com/...` or `https://*.baidupcs.com/...` therefore
+/// always go out with that identity, unless the caller set one already.
+/// The host of a URL, lowercased, without port and credentials. A tiny parser
+/// is enough here and keeps the app crate free of a direct `url` dependency.
+fn host_of(url: &str) -> Option<String> {
+    let rest = url.split_once("://")?.1;
+    let authority = rest.split(['/', '?', '#']).next()?;
+    let host = authority.rsplit_once('@').map(|(_, h)| h).unwrap_or(authority);
+    let host = host.split(':').next().unwrap_or(host);
+    Some(host.to_ascii_lowercase())
+}
+
+pub(crate) fn ensure_baidu_ua(url: &str, headers: &mut Vec<(String, String)>) {
+    let is_baidu = host_of(url.trim()).is_some_and(|host| {
+        host == "pcs.baidu.com"
+            || host == "baidupcs.com"
+            || host.ends_with(".pcs.baidu.com")
+            || host.ends_with(".baidupcs.com")
+    });
+    if !is_baidu {
+        return;
+    }
+    let has_ua = headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("user-agent"));
+    if !has_ua {
+        headers.push(("User-Agent".to_string(), "pan.baidu.com".to_string()));
     }
 }
 
@@ -1130,5 +1162,41 @@ mod video_default_tests {
         assert_eq!(clean_name("a/b: c*d?"), "a b c d");
         assert_eq!(clean_name("Version 2.0"), "Version 2.0", "a long tail after the dot isn't an extension");
         assert_eq!(clean_name("  "), "video");
+    }
+}
+
+#[cfg(test)]
+mod baidu_ua_tests {
+    use super::ensure_baidu_ua;
+
+    #[test]
+    fn injects_for_pcs_baidu() {
+        let mut h = vec![];
+        ensure_baidu_ua("https://d.pcs.baidu.com/file/xyz?fid=1", &mut h);
+        assert_eq!(h, vec![("User-Agent".to_string(), "pan.baidu.com".to_string())]);
+    }
+
+    #[test]
+    fn injects_for_baidupcs() {
+        let mut h = vec![];
+        ensure_baidu_ua("https://d112.baidupcs.com/file/abc?dstime=1", &mut h);
+        assert_eq!(h, vec![("User-Agent".to_string(), "pan.baidu.com".to_string())]);
+    }
+
+    #[test]
+    fn keeps_existing_user_agent() {
+        let mut h = vec![("User-Agent".to_string(), "Mozilla/5.0".to_string())];
+        ensure_baidu_ua("https://d.pcs.baidu.com/file/xyz", &mut h);
+        assert_eq!(h, vec![("User-Agent".to_string(), "Mozilla/5.0".to_string())]);
+    }
+
+    #[test]
+    fn ignores_other_hosts() {
+        let mut h = vec![];
+        ensure_baidu_ua("https://github.com/rust-lang/rust/archive/main.tar.gz", &mut h);
+        assert!(h.is_empty());
+        let mut h2 = vec![];
+        ensure_baidu_ua("https://evil-pcs.baidu.com.example.com/file", &mut h2);
+        assert!(h2.is_empty(), "a lookalike domain must not match");
     }
 }

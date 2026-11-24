@@ -7,7 +7,7 @@ import "./styles.css";
 import "./download.css";
 import { invoke, listen, currentWindow, LogicalSize, $ } from "./api";
 import type { Item, Incoming, Header, MediaInfo, TorrentInfo, AddRequest, ProbeInfo, Settings, Quality } from "./api";
-import { icon, CATS, catOf, bytes, speed, dur, when, esc, host, catInfo, segBar } from "./util";
+import { icon, CATS, catOf, catLabel, bytes, speed, dur, when, esc, host, catInfo, segBar } from "./util";
 
 const win = currentWindow();
 
@@ -21,14 +21,32 @@ const whenFull = (ms: number | null) => {
 const view = $("view");
 
 // The window grows and shrinks to fit what it shows.
+// 拖动窗口时不再改尺寸：setSize 会打断 macOS 的原生拖动，
+// 窗口会先跳回原来的位置、再重新跟上鼠标（用户 2026-11-18 报的“回一跳”）。
+let dragging = false;
+let dragTimer: number | undefined;
 const fit = () => {
-  if (!win || !LogicalSize) return;
+  if (!win || !LogicalSize || dragging) return;
   // The card plus the 16px transparent margin on each side (for its shadow).
   const root = $("root");
   const h = Math.ceil(Math.max(root.getBoundingClientRect().height, root.scrollHeight)) + 32;
   // A resize that fails (or lands before the layout settles) must not leave the buttons cut off.
   Promise.resolve(win.setSize(new LogicalSize(552, Math.min(780, h)))).catch(() => setTimeout(fit, 400));
 };
+// 标题栏按下 = 开始拖动窗口；抬起后再补一次尺寸自适应。
+document.querySelector(".w-bar")?.addEventListener("mousedown", (e) => {
+  if ((e.target as HTMLElement).closest(".w-btn")) return;
+  dragging = true;
+  clearTimeout(dragTimer);
+  // 原生拖动时网页收不到 mouseup，用超时兜底解除。
+  dragTimer = window.setTimeout(() => { dragging = false; fit(); }, 3000);
+});
+window.addEventListener("mouseup", () => {
+  if (!dragging) return;
+  dragging = false;
+  clearTimeout(dragTimer);
+  window.setTimeout(fit, 150);
+});
 new ResizeObserver(fit).observe($("root"));
 // Again once the page and fonts have settled; some screens report their size late.
 window.addEventListener("load", () => [100, 400, 1200].forEach((t) => setTimeout(fit, t)));
@@ -48,16 +66,16 @@ async function addDownload(req: AddRequest): Promise<number | null> {
   try {
     return await invoke("add_download", { req });
   } catch (e) {
-    view.querySelector<HTMLElement>(".d-foot")?.insertAdjacentHTML("beforebegin", `<p class="err add-err">Couldn't add the download: ${esc(String(e))}</p>`);
+    view.querySelector<HTMLElement>(".d-foot")?.insertAdjacentHTML("beforebegin", `<p class="err add-err">无法添加下载：${esc(String(e))}</p>`);
     return null;
   }
 }
 
 // ---------- New download (caught from the browser) ----------
 async function confirmView(token: number) {
-  setTitle("New download");
+  setTitle("新建下载");
   const inc = await invoke("confirm_info", { token });
-  if (!inc) { view.innerHTML = `<p class="muted">This download is no longer available.</p>`; return; }
+  if (!inc) { view.innerHTML = `<p class="muted">此下载已不可用。</p>`; return; }
   const { settings } = await invoke("get_state");
   const headers: Header[] = [];
   if (inc.cookies) headers.push(["Cookie", inc.cookies]);
@@ -67,22 +85,22 @@ async function confirmView(token: number) {
   if (await invoke("is_media_url", { url: inc.url })) return mediaView(token, inc, settings, headers);
   if (await invoke("is_torrent_url", { url: inc.url, filename: inc.filename || null })) return torrentView(token, inc, settings, headers);
 
-  const dirFor = (cat: string) => (settings.sortIntoCategories && cat !== "Other" ? `${settings.downloadDir}\\${cat}` : settings.downloadDir);
+  const dirFor = (cat: string) => (settings.sortIntoCategories && cat !== "其他" ? `${settings.downloadDir}/${cat}` : settings.downloadDir);
   view.innerHTML = `
-    <div class="d-head"><span id="c-tile">${glyph("Other")}</span><div class="d-name"><input id="c-name" spellcheck="false" placeholder="Getting file details…"><div class="d-sub"><span class="st">${esc(host(inc.url))}</span></div></div></div>
+    <div class="d-head"><span id="c-tile">${glyph("其他")}</span><div class="d-name"><input id="c-name" spellcheck="false" placeholder="正在获取文件信息…"><div class="d-sub"><span class="st">${esc(host(inc.url))}</span></div></div></div>
     <div class="kv">
-      <span class="k">Address</span><span class="v"><span title="${esc(inc.url)}">${esc(inc.url)}</span></span>
-      <span class="k">Size</span><span class="v" id="c-size"><span class="spinner"></span><span class="muted">Checking…</span></span>
-      <span class="k">Category</span><span class="v"><select id="c-cat">${Object.keys(CATS).map((c) => `<option>${c}</option>`).join("")}</select></span>
-      <span class="k">Save to</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">Change</button></span>
-      <span class="k">Mirrors</span><span class="v"><input id="c-mirrors" spellcheck="false" title="Other addresses of the same file. The parts are shared between all of them, and a failing one is skipped." placeholder="Optional: other links to the same file"></span>
-      <span class="k">SHA-256</span><span class="v"><input id="c-sum" spellcheck="false" placeholder="Optional: paste it to check the file"></span>
+      <span class="k">地址</span><span class="v"><span title="${esc(inc.url)}">${esc(inc.url)}</span></span>
+      <span class="k">大小</span><span class="v" id="c-size"><span class="spinner"></span><span class="muted">检查中…</span></span>
+      <span class="k">分类</span><span class="v"><select id="c-cat">${Object.keys(CATS).map((c) => `<option value="${c}">${catLabel(c)}</option>`).join("")}</select></span>
+      <span class="k">保存到</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">更改</button></span>
+      <span class="k">镜像地址</span><span class="v"><input id="c-mirrors" spellcheck="false" title="同一文件的其他下载地址。所有地址共用文件分片，某个地址失败会自动跳过。" placeholder="可选：同一文件的其他链接"></span>
+      <span class="k">SHA-256</span><span class="v"><input id="c-sum" spellcheck="false" placeholder="可选：粘贴校验值核对文件"></span>
     </div>
     <div class="d-foot">
-      <button class="btn" id="c-later">Download later</button>
+      <button class="btn" id="c-later">稍后下载</button>
       <span class="grow"></span>
-      <button class="btn" id="c-cancel">Cancel</button>
-      <button class="btn primary" id="c-start" disabled>Start download</button>
+      <button class="btn" id="c-cancel">取消</button>
+      <button class="btn primary" id="c-start" disabled>开始下载</button>
     </div>`;
   const setDir = (d: string) => { dir = d; $("c-dir").textContent = d; $("c-dir").title = d; };
   setDir(dir);
@@ -95,11 +113,11 @@ async function confirmView(token: number) {
     $("c-cat").value = info.category;
     $("c-tile").innerHTML = glyph(info.category, $("c-name").value);
     setDir(info.dir);
-    $("c-size").innerHTML = `<span>${info.size != null ? bytes(info.size) : "Unknown size"}</span><span class="muted">${info.resumable ? `Resumable · up to ${settings.connections} connections` : "Can't resume · 1 connection"}</span>`;
+    $("c-size").innerHTML = `<span>${info.size != null ? bytes(info.size) : "未知大小"}</span><span class="muted">${info.resumable ? `可续传 · 最多 ${settings.connections} 个连接` : "不可续传 · 1 个连接"}</span>`;
     $("c-start").disabled = false;
   } catch (e) {
     $("c-name").value = inc.filename || "download";
-    $("c-size").innerHTML = `<span class="err">Couldn't reach the file: ${esc(String(e))}</span>`;
+    $("c-size").innerHTML = `<span class="err">无法访问该文件：${esc(String(e))}</span>`;
   }
   styledSelect($("c-cat") as HTMLSelectElement);
   $("c-cat").onchange = () => { $("c-tile").innerHTML = glyph($("c-cat").value, $("c-name").value); if (!dirTouched) setDir(dirFor($("c-cat").value)); };
@@ -111,9 +129,9 @@ async function confirmView(token: number) {
     const filename = $("c-name").value.trim();
     if (!filename) return;
     const sum = $("c-sum").value.trim().toLowerCase();
-    if (sum && !/^[a-f0-9]{64}$/.test(sum)) { $("c-sum").classList.add("bad"); $("c-sum").title = "A SHA-256 is 64 letters and digits"; $("c-sum").focus(); return; }
+    if (sum && !/^[a-f0-9]{64}$/.test(sum)) { $("c-sum").classList.add("bad"); $("c-sum").title = "SHA-256 是 64 位字母和数字"; $("c-sum").focus(); return; }
     const mirrors = $("c-mirrors").value.split(/[\s,]+/).filter(Boolean);
-    if (mirrors.some((m) => !/^https?:\/\/\S+$/i.test(m))) { $("c-mirrors").classList.add("bad"); $("c-mirrors").title = "Mirrors are http(s) links, separated by spaces or commas"; $("c-mirrors").focus(); return; }
+    if (mirrors.some((m) => !/^https?:\/\/\S+$/i.test(m))) { $("c-mirrors").classList.add("bad"); $("c-mirrors").title = "镜像地址需要是 http(s) 链接，用空格或逗号分隔"; $("c-mirrors").focus(); return; }
     const id = await addDownload({ url: inc.url, filename, dir, headers, start, window: win?.label, checksum: sum || null, mirrors });
     if (id == null) return;
     invoke("forget_confirm", { token });
@@ -132,22 +150,22 @@ async function confirmView(token: number) {
 const safeName = (s: string) => s.replace(/[<>:"/\\|?*\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().replace(/[. ]+$/, "").slice(0, 150) || "video";
 async function mediaView(token: number, inc: Incoming, settings: Settings, headers: Header[]) {
   let dir = settings.downloadDir, dirTouched = false, info: MediaInfo | null = null;
-  const dirFor = (cat: string) => (settings.sortIntoCategories && cat !== "Other" ? `${settings.downloadDir}\\${cat}` : settings.downloadDir);
+  const dirFor = (cat: string) => (settings.sortIntoCategories && cat !== "其他" ? `${settings.downloadDir}/${cat}` : settings.downloadDir);
   view.innerHTML = `
-    <div class="d-head"><span id="c-tile">${glyph("Video")}</span><div class="d-name"><input id="c-name" spellcheck="false" placeholder="Getting video details…"><div class="d-sub"><span class="st">${esc(host(inc.url))}</span></div></div></div>
+    <div class="d-head"><span id="c-tile">${glyph("视频")}</span><div class="d-name"><input id="c-name" spellcheck="false" placeholder="正在获取视频信息…"><div class="d-sub"><span class="st">${esc(host(inc.url))}</span></div></div></div>
     <div class="kv">
-      <span class="k">Address</span><span class="v"><span title="${esc(inc.url)}">${esc(inc.url)}</span></span>
-      <span class="k">Quality</span><span class="v" id="c-q"><span class="spinner"></span><span class="muted" id="c-status">Getting video details…</span></span>
-      <span class="k">Save to</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">Change</button></span>
+      <span class="k">地址</span><span class="v"><span title="${esc(inc.url)}">${esc(inc.url)}</span></span>
+      <span class="k">画质</span><span class="v" id="c-q"><span class="spinner"></span><span class="muted" id="c-status">正在获取视频信息…</span></span>
+      <span class="k">保存到</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">更改</button></span>
     </div>
     <div class="d-foot">
-      <button class="btn" id="c-later" disabled>Download later</button>
+      <button class="btn" id="c-later" disabled>稍后下载</button>
       <span class="grow"></span>
-      <button class="btn" id="c-cancel">Cancel</button>
-      <button class="btn primary" id="c-start" disabled>Start download</button>
+      <button class="btn" id="c-cancel">取消</button>
+      <button class="btn primary" id="c-start" disabled>开始下载</button>
     </div>`;
   const setDir = (d: string) => { dir = d; $("c-dir").textContent = d; $("c-dir").title = d; };
-  setDir(dirFor("Video"));
+  setDir(dirFor("视频"));
   // Say what is actually happening, with the seconds so far: fetching the
   // video tools the first time, otherwise waiting on the site.
   const site = host(inc.url).replace(/^www\./, "");
@@ -158,11 +176,11 @@ async function mediaView(token: number, inc: Incoming, settings: Settings, heade
     const note = await invoke("probe_note").catch(() => null);
     const s = Math.round((Date.now() - started) / 1000);
     el.textContent = note ? `${note.replace(" · ", "… ")}${note.includes("%") ? "" : "…"}`
-      : s < 3 ? "Getting video details…" : `Asking ${site} about this video… ${s} s`;
+      : s < 3 ? "正在获取视频信息…" : `正在向 ${site} 询问视频信息… ${s} 秒`;
   }, 500);
   const quality = (): Quality => info!.qualities[Number($("c-qs").value) || 0];
   const applyQuality = () => {
-    const q = quality(), cat = q.ext === "mp4" || q.ext === "webm" ? "Video" : "Music";
+    const q = quality(), cat = q.ext === "mp4" || q.ext === "webm" ? "视频" : "音乐";
     $("c-name").value = $("c-name").value.replace(/\.[a-z0-9]{2,4}$/i, "") + `.${q.ext}`;
     $("c-tile").innerHTML = glyph(cat, $("c-name").value);
     if (!dirTouched) setDir(dirFor(cat));
@@ -219,24 +237,24 @@ async function torrentView(token: number, inc: Incoming, settings: Settings, hea
   let dir = settings.downloadDir, info: TorrentInfo | null = null;
   const magnet = inc.url.startsWith("magnet:");
   view.innerHTML = `
-    <div class="d-head">${glyph("Compressed")}<div class="d-name"><input id="c-name" spellcheck="false" placeholder="${magnet ? "Asking peers for the details…" : "Reading the torrent…"}" readonly><div class="d-sub"><span class="st">${magnet ? "Magnet link" : "Torrent"}</span></div></div></div>
-    <div class="t-files" id="t-files"><div class="t-wait"><span class="spinner"></span><span class="muted">${magnet ? "Finding peers who share it. This can take a few seconds." : "Reading the file list…"}</span></div></div>
+    <div class="d-head">${glyph("压缩文件")}<div class="d-name"><input id="c-name" spellcheck="false" placeholder="${magnet ? "正在向节点询问信息…" : "正在读取种子…"}" readonly><div class="d-sub"><span class="st">${magnet ? "Magnet 链接" : "种子文件"}</span></div></div></div>
+    <div class="t-files" id="t-files"><div class="t-wait"><span class="spinner"></span><span class="muted">${magnet ? "正在寻找分享该资源的节点，可能需要几秒钟。" : "正在读取文件列表…"}</span></div></div>
     <div class="kv">
-      <span class="k">Selected</span><span class="v" id="t-sel">—</span>
-      <span class="k">Save to</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">Change</button></span>
+      <span class="k">已选</span><span class="v" id="t-sel">—</span>
+      <span class="k">保存到</span><span class="v"><span class="path" id="c-dir" title=""></span><button class="btn sm" id="c-browse">更改</button></span>
     </div>
     <div class="d-foot">
-      <button class="btn" id="c-later" disabled>Download later</button>
+      <button class="btn" id="c-later" disabled>稍后下载</button>
       <span class="grow"></span>
-      <button class="btn" id="c-cancel">Cancel</button>
-      <button class="btn primary" id="c-start" disabled>Start download</button>
+      <button class="btn" id="c-cancel">取消</button>
+      <button class="btn primary" id="c-start" disabled>开始下载</button>
     </div>`;
   const setDir = (d: string) => { dir = d; $("c-dir").textContent = d; $("c-dir").title = d; };
   setDir(dir);
   const chosen = (): number[] => [...view.querySelectorAll<HTMLInputElement>(".t-file input[data-i]:checked")].map((c) => Number(c.dataset.i));
   const update = () => {
     const sel = chosen(), size = sel.reduce((a, i) => a + info!.files[i].size, 0);
-    $("t-sel").textContent = `${sel.length} of ${info!.files.length} file${info!.files.length === 1 ? "" : "s"} · ${bytes(size)}`;
+    $("t-sel").textContent = `已选 ${sel.length}/${info!.files.length} 个文件 · ${bytes(size)}`;
     $("c-start").disabled = $("c-later").disabled = sel.length === 0;
     const all = $("t-all"); if (all) all.checked = sel.length === info!.files.length;
   };
@@ -244,7 +262,7 @@ async function torrentView(token: number, inc: Incoming, settings: Settings, hea
     info = await invoke("probe_torrent", { url: inc.url, headers });
     $("c-name").value = info.name;
     const many = info.files.length > 1;
-    $("t-files").innerHTML = (many ? `<label class="t-file t-allrow"><input type="checkbox" id="t-all" checked><span>All files</span><span class="muted">${bytes(info.size)}</span></label>` : "") +
+    $("t-files").innerHTML = (many ? `<label class="t-file t-allrow"><input type="checkbox" id="t-all" checked><span>全部文件</span><span class="muted">${bytes(info.size)}</span></label>` : "") +
       info.files.map((f, i) => `<label class="t-file"><input type="checkbox" data-i="${i}" checked><span title="${esc(f.path)}">${esc(f.path)}</span><span class="muted">${bytes(f.size)}</span></label>`).join("");
     $("t-files").addEventListener("change", (e) => {
       if ((e.target as HTMLElement & HTMLInputElement).id === "t-all") view.querySelectorAll<HTMLInputElement>(".t-file input[data-i]").forEach((c) => (c.checked = (e.target as HTMLElement & HTMLInputElement).checked));
@@ -307,10 +325,10 @@ function render() {
   if (layout !== key) {
     layout = key;
     const buttons = {
-      run: `<button class="btn" data-a="cancel">Cancel</button><button class="btn" data-a="pause">Pause</button>`,
-      paused: `<button class="btn" data-a="cancel">Cancel</button><button class="btn primary" data-a="resume">Resume</button>`,
-      done: `<button class="btn" data-a="folder">Show in folder</button><button class="btn" data-a="close">Close</button><button class="btn primary" data-a="open">Open</button>`,
-      error: `<button class="btn" data-a="close">Close</button><button class="btn primary" data-a="resume">Retry</button>`,
+      run: `<button class="btn" data-a="cancel">取消</button><button class="btn" data-a="pause">暂停</button>`,
+      paused: `<button class="btn" data-a="cancel">取消</button><button class="btn primary" data-a="resume">继续</button>`,
+      done: `<button class="btn" data-a="folder">在文件夹中显示</button><button class="btn" data-a="close">关闭</button><button class="btn primary" data-a="open">打开</button>`,
+      error: `<button class="btn" data-a="close">关闭</button><button class="btn primary" data-a="resume">重试</button>`,
     }[state];
     view.innerHTML = `
       <div class="d-head">${glyph(cat, it.filename)}<div class="d-name"><b title="${esc(it.filename)}">${esc(it.filename)}</b><div class="d-sub" id="p-sub"></div></div></div>
@@ -318,9 +336,9 @@ function render() {
       <div class="segbar" id="p-bar"></div>
       <div class="p-meta" id="p-right"></div>
       <div class="kv" id="p-kv"></div>
-      ${showDetails ? `<div class="conn"><div class="cscroll"><table class="ctable"><thead><tr><th>Part</th><th>Size</th><th>Received</th><th>Status</th></tr></thead><tbody id="p-rows"></tbody></table></div></div>` : ""}
+      ${showDetails ? `<div class="conn"><div class="cscroll"><table class="ctable"><thead><tr><th>分段</th><th>大小</th><th>已接收</th><th>状态</th></tr></thead><tbody id="p-rows"></tbody></table></div></div>` : ""}
       <div class="d-foot">
-        ${!media && (state === "run" || state === "paused") ? `<button class="ghost-btn" data-a="details">${icon(showDetails ? "chevUp" : "chevDown")}${showDetails ? "Hide details" : "Show details"}</button>` : ""}
+        ${!media && (state === "run" || state === "paused") ? `<button class="ghost-btn" data-a="details">${icon(showDetails ? "chevUp" : "chevDown")}${showDetails ? "收起详情" : "展开详情"}</button>` : ""}
         <span class="grow"></span>${buttons}
       </div>`;
   }
@@ -329,41 +347,41 @@ function render() {
   // Every byte is in but the file is still being put together or checked.
   const finishing = state === "run" && !!it.size && it.downloaded >= it.size;
   const status = {
-    run: [it.note || (finishing ? "Finishing…" : media ? (it.downloaded ? "Downloading" : "Starting…") : it.connections ? "Downloading" : "Connecting…"), "var(--accent)"],
-    paused: [it.status === "queued" ? "Waiting in queue" : "Paused", "var(--amber)"],
-    done: ["Completed", "var(--green)"],
-    error: [it.error || "Failed", "var(--red)"],
+    run: [it.note || (finishing ? "即将完成…" : media ? (it.downloaded ? "下载中" : "正在启动…") : it.connections ? "下载中" : "连接中…"), "var(--accent)"],
+    paused: [it.status === "queued" ? "排队等待中" : "已暂停", "var(--amber)"],
+    done: ["已完成", "var(--green)"],
+    error: [it.error || "下载失败", "var(--red)"],
   }[state];
-  setTitle(state === "done" ? "Download complete" : state === "error" ? "Download failed" : `${Math.floor(pct)}% · ${it.filename}`);
-  $("p-sub").innerHTML = `<span class="st ${state === "error" ? "err" : ""}" title="${esc(status[0])}">${esc(status[0])}</span><span class="from">from ${esc(host(it.url))}</span>`;
+  setTitle(state === "done" ? "下载完成" : state === "error" ? "下载失败" : `${Math.floor(pct)}% · ${it.filename}`);
+  $("p-sub").innerHTML = `<span class="st ${state === "error" ? "err" : ""}" title="${esc(status[0])}">${esc(status[0])}</span><span class="from">来自 ${esc(host(it.url))}</span>`;
   $("p-pct").textContent = it.size || state === "done" ? `${Math.floor(pct)}%` : "";
   // Still preparing (fetching the video tools): no numbers to show yet.
   const preparing = state === "run" && !!it.note && !it.downloaded;
-  $("p-left").textContent = preparing ? "" : state === "done" ? bytes(it.size) : it.size ? `${bytes(it.downloaded)} of ${bytes(it.size)}` : bytes(it.downloaded);
-  const conns = it.connections ? `${it.connections} connection${it.connections === 1 ? "" : "s"}` : "";
-  $("p-right").textContent = state === "run" && !finishing && !preparing ? [speed(it.speed), `${dur(eta)} left`, conns].filter(Boolean).join("   ·   ")
-    : state === "done" ? `Finished ${whenFull(it.completedAt)}` : "";
+  $("p-left").textContent = preparing ? "" : state === "done" ? bytes(it.size) : it.size ? `${bytes(it.downloaded)} / ${bytes(it.size)}` : bytes(it.downloaded);
+  const conns = it.connections ? `${it.connections} 个连接` : "";
+  $("p-right").textContent = state === "run" && !finishing && !preparing ? [speed(it.speed), `剩余 ${dur(eta)}`, conns].filter(Boolean).join("   ·   ")
+    : state === "done" ? `完成于 ${whenFull(it.completedAt)}` : "";
   const bar = $("p-bar");
   bar.className = `segbar ${state} ${!it.size && state === "run" ? "indet" : ""}`;
   segBar(bar, null, undefined, pct);
   const row = (k: string, v: string, cls = "") => `<span class="k">${k}</span><span class="v"><span class="${cls}" title="${esc(v)}">${esc(v)}</span></span>`;
-  const kv = row("Location", dir, "path") +
-    (state === "done" ? "" : torrent ? row("Files", it.torrentFiles!.length ? `${it.torrentFiles!.length} selected` : "All") : media ? row("Quality", qualityLabel(it.format)) : row("Resume", it.resumable ? "Supported" : "Not supported by this server")) +
-    row("Address", it.url);
+  const kv = row("位置", dir, "path") +
+    (state === "done" ? "" : torrent ? row("文件", it.torrentFiles!.length ? `已选 ${it.torrentFiles!.length} 个` : "全部") : media ? row("画质", qualityLabel(it.format)) : row("续传", it.resumable ? "支持" : "服务器不支持")) +
+    row("地址", it.url);
   if ($("p-kv").innerHTML !== kv) $("p-kv").innerHTML = kv;
 
   if (showDetails) {
     const segs = (it.segments || []).filter(([s, , e]) => e > s);
     $("p-rows").innerHTML = segs.map(([s, p, e], n) => {
       const done = p >= e;
-      return `<tr class="${done ? "done" : ""}"><td>${n + 1}</td><td>${bytes(e - s)}</td><td>${Math.floor(((p - s) / Math.max(1, e - s)) * 100)}%</td><td>${done ? "Done" : paused ? "Paused" : "Receiving"}</td></tr>`;
-    }).join("") || `<tr><td colspan="4" class="muted">Parts appear once the download starts.</td></tr>`;
+      return `<tr class="${done ? "done" : ""}"><td>${n + 1}</td><td>${bytes(e - s)}</td><td>${Math.floor(((p - s) / Math.max(1, e - s)) * 100)}%</td><td>${done ? "完成" : paused ? "已暂停" : "接收中"}</td></tr>`;
+    }).join("") || `<tr><td colspan="4" class="muted">下载开始后，分段会显示在这里。</td></tr>`;
   }
 }
 
 function qualityLabel(format: string | null) {
   const h = /height=(\d+)/.exec(format || "");
-  return h ? `${h[1]}p` : /^ba/.test(format || "") ? "Audio only" : /^hls/.test(format || "") ? "Chosen in the browser" : "Best available";
+  return h ? `${h[1]}p` : /^ba/.test(format || "") ? "仅音频" : /^hls/.test(format || "") ? "浏览器中选择" : "最高可用";
 }
 
 view.addEventListener("click", async (e) => {
@@ -374,15 +392,23 @@ view.addEventListener("click", async (e) => {
     case "details": details = !details; render(); break;
     case "pause": invoke("pause", { ids: [id] }); break;
     case "resume": layout = ""; invoke("resume", { ids: [id] }); break;
-    case "open": invoke("open_file", { id }); $("w-close").click(); break;
-    case "folder": invoke("open_folder", { id }); break;
+    case "open":
+      invoke("open_file", { id });
+      setTimeout(() => $("w-close").click(), 150);
+      break;
+    case "folder":
+      // 打开所在文件夹后，这个下载框就没用了，跟「打开」一样自动关掉（用户 2026-11-18 报的）。
+      // 先发出命令、稍等一拍再关，免得 webview 先死掉把请求掐了。
+      invoke("open_folder", { id });
+      setTimeout(() => $("w-close").click(), 150);
+      break;
     case "close": $("w-close").click(); break;
     case "cancel":
       // Ask twice instead of a second dialog: the button arms for 3 s.
       if (!b.classList.contains("armed")) {
-        b.classList.add("armed"); b.textContent = "Cancel download?";
+        b.classList.add("armed"); b.textContent = "确认取消下载？";
         clearTimeout(armedTimer);
-        armedTimer = window.setTimeout(() => { b.classList.remove("armed"); b.textContent = "Cancel"; }, 3000);
+        armedTimer = window.setTimeout(() => { b.classList.remove("armed"); b.textContent = "取消"; }, 3000);
       } else {
         await invoke("remove", { ids: [id], deleteFiles: false });
         $("w-close").click();

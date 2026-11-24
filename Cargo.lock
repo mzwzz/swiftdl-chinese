@@ -5173,6 +5173,7 @@ dependencies = [
  "flate2",
  "futures-util",
  "librqbit",
+ "objc2-app-kit",
  "os_pipe",
  "percent-encoding",
  "roxmltree",

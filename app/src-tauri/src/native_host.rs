@@ -86,7 +86,7 @@ fn refused(v: &Value) -> Option<String> {
     };
     let result = tauri::async_runtime::block_on(probe)?;
     let err = format!("{:#}", result.err()?);
-    (err.starts_with("server returned") || err.starts_with("This link opens a web page")).then(|| format!("{err}. The browser keeps this download."))
+    (err.starts_with("服务器返回") || err.starts_with("此链接是网页")).then(|| format!("{err}。浏览器会保留此下载。"))
 }
 
 /// Starts the app with `args`. If it is already open, the single-instance

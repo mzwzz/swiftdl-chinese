@@ -20,6 +20,14 @@ try {
 const apply = () => {
   const dark = pref === "dark" || (pref === "system" && media.matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  // Keep the native window appearance in sync, so vibrancy materials
+  // (the translucent sidebar) match the app's theme instead of only the
+  // system's: without this, a forced dark theme keeps a light sidebar.
+  const nativeTheme = dark ? "dark" : pref === "system" ? null : "light";
+  try {
+    const w = (window as unknown as { __TAURI__?: { core?: { invoke?: (cmd: string, args?: unknown) => void } } }).__TAURI__;
+    w?.core?.invoke?.("set_theme", { theme: nativeTheme });
+  } catch { /* runtime not ready yet: startup applies it from settings */ }
 };
 media.addEventListener("change", apply);
 
