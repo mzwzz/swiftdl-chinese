@@ -76,7 +76,7 @@ SwiftDL 是一个 IDM 风格的高速下载器，支持多连接分段下载、�
 
 ## 安装
 
-1. 在 [Releases](../../releases/latest) 里下载 `SwiftDL-0.4.3-zh.1-macOS-arm64.dmg`（或 `.zip`）
+1. 在 [Releases](../../releases/latest) 里下载 `SwiftDL-0.5.0-zh.1-macOS-arm64.dmg`（或 `.zip`）
 2. 打开 dmg，把 **SwiftDL.app** 拖进「应用程序」（包里那个 `应用程序` 是一个指向 /Applications 的快捷方式）
 3. 第一次打开如果提示「无法验证开发者」，去 **系统设置 → 隐私与安全性**，点「仍要打开」
 
