@@ -42,5 +42,8 @@ zip = { version = "9.1.3", default-features = false, features = ["deflate"] }
 tiny_http = "0.12"
 tauri-plugin-autostart = "2.7.0"
 
+[target."cfg(target_os = \"macos\")".dependencies]
+objc2-app-kit = { version = "0.3", default-features = false, features = ["NSRunningApplication", "NSWindow"] }
+
 [target."cfg(windows)".dependencies]
 winreg = "0.56.0"

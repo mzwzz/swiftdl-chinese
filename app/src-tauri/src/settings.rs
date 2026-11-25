@@ -70,7 +70,10 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             download_dir: PathBuf::new(),
-            connections: 8,
+            // 16 connections: Baidu's per-connection throttle for free accounts
+            // is the common bottleneck, and 16 is where measured throughput
+            // peaks (more connections makes it worse).
+            connections: 16,
             max_concurrent: 3,
             speed_limit_kib: 0,
             sort_into_categories: true,

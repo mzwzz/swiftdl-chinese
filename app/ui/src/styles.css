@@ -33,16 +33,17 @@
   --shadow-card: 0 0 0 1px var(--border), 0 1px 2px rgba(15, 15, 25, .04);
   --shadow-pop: 0 0 0 1px rgba(15, 15, 25, .08), 0 4px 10px rgba(15, 15, 25, .06), 0 18px 48px -8px rgba(15, 15, 25, .2);
   --kbd-bg: rgba(15, 15, 25, .05);
-  --font: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", -apple-system, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --sidebar-tint: rgba(255, 255, 255, .62);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Inter", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Inter", system-ui, sans-serif;
   color-scheme: light;
 }
 /* Dark theme. Each window sets data-theme on <html>: "light" or "dark",
    chosen in Settings or following the system (see theme.ts). */
 :root[data-theme="dark"] {
-  --bg: #090a0c;
-  --panel: #101114;
-  --elev: #16171b;
+  --bg: #1a1c1e;
+  --panel: #1a1b1f;
+  --elev: #1a1b1f;
   --menu: rgba(26, 27, 32, .88);
   --hover: rgba(255, 255, 255, .035);
   --active: rgba(255, 255, 255, .065);
@@ -68,6 +69,7 @@
   --shadow-card: 0 0 0 1px var(--border);
   --shadow-pop: 0 0 0 1px rgba(255, 255, 255, .08), 0 8px 24px rgba(0, 0, 0, .4), 0 24px 64px -12px rgba(0, 0, 0, .6);
   --kbd-bg: rgba(255, 255, 255, .06);
+  --sidebar-tint: rgba(24, 25, 29, .66);
   color-scheme: dark;
 }
 
@@ -76,7 +78,7 @@ html, body { margin: 0; height: 100%; }
 body {
   font: 450 13px/1.45 var(--font);
   letter-spacing: -.003em;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
   user-select: none;
   overflow: hidden;
@@ -99,10 +101,11 @@ kbd {
 .app { display: grid; grid-template-columns: 236px minmax(0, 1fr); height: 100vh; }
 
 /* ============ Sidebar ============ */
-.sidebar { display: flex; flex-direction: column; min-height: 0; padding: 0 10px 10px; }
-.side-top { display: flex; align-items: center; gap: 4px; height: 52px; padding: 0 2px 0 6px; flex: none; }
+.sidebar { display: flex; flex-direction: column; min-height: 0; padding: 0 10px 10px; background: var(--sidebar-tint); }
+.side-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; height: 38px; padding: 0 6px 0 74px; flex: none; }
 .brand { flex: 1; display: flex; align-items: center; gap: 9px; font: 600 14px/1 var(--font-display); letter-spacing: -.01em; }
-.sq-btn { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); transition: background .1s, color .1s; }
+.sq-btn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--muted); transition: background .1s, color .1s; }
+.sq-btn svg.ic { width: 16px; height: 16px; }
 .sq-btn:hover { background: var(--hover); color: var(--text); }
 .sq-btn.bordered { box-shadow: inset 0 0 0 1px var(--border-2); background: var(--panel); color: var(--text-2); }
 .sq-btn.bordered:hover { color: var(--text); background: var(--panel); box-shadow: inset 0 0 0 1px var(--faint); }
@@ -144,8 +147,9 @@ kbd {
 /* ============ Main card ============ */
 .main {
   display: flex; flex-direction: column; min-width: 0; min-height: 0;
-  margin: 8px 8px 8px 0; border-radius: 12px; overflow: hidden;
-  background: var(--panel); box-shadow: var(--shadow-card);
+  border-left: 1px solid var(--border);
+  border-radius: 0 10px 10px 0; overflow: hidden;
+  background: var(--panel);
 }
 .header { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 8px 0 18px; border-bottom: 1px solid var(--border); flex: none; }
 .h-title { flex: 1; display: flex; align-items: center; gap: 9px; min-width: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; }
@@ -162,11 +166,6 @@ kbd {
 .search-btn span { flex: 1; text-align: left; }
 .search-btn:hover { color: var(--muted); box-shadow: inset 0 0 0 1px var(--border-2); }
 .search-btn svg.ic { width: 14px; height: 14px; }
-.win-ctrls { display: flex; margin-left: 8px; padding-left: 8px; border-left: 1px solid var(--border); }
-.win-ctrls button { width: 32px; height: 28px; border-radius: 6px; display: grid; place-items: center; color: var(--muted); }
-.win-ctrls button:hover { background: var(--hover); color: var(--text); }
-.win-ctrls button.close:hover { background: #e5484d; color: #fff; }
-.win-ctrls svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
 
 .body { flex: 1; min-height: 0; display: flex; }
 .list { flex: 1; min-width: 0; overflow-y: auto; position: relative; container-type: inline-size; }
@@ -252,9 +251,12 @@ kbd {
 
 /* empty */
 .empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 32px; }
-.empty-icon { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; color: var(--muted); background: var(--panel); box-shadow: var(--shadow-card), 0 6px 16px -6px rgba(0, 0, 0, .12); margin-bottom: 18px; }
+.empty-icon { width: 56px; height: 56px; padding: 0; border: 0; border-radius: 14px; display: grid; place-items: center; color: var(--muted); background: var(--panel); box-shadow: var(--shadow-card), 0 6px 16px -6px rgba(0, 0, 0, .12); margin-bottom: 18px; cursor: pointer; transition: color .12s, transform .12s; }
+.empty-icon:hover { color: var(--accent); transform: translateY(-1px); }
+.empty-icon:active { transform: translateY(0); }
 .empty-icon svg.ic { width: 24px; height: 24px; }
 .empty h2 { margin: 0 0 6px; font: 600 16px/1.3 var(--font-display); letter-spacing: -.01em; }
+.empty h2 kbd { vertical-align: 2px; }
 .empty p { margin: 0 0 20px; color: var(--muted); max-width: 340px; line-height: 1.55; }
 .empty-actions { display: flex; gap: 8px; }
 

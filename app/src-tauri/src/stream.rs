@@ -396,7 +396,7 @@ pub async fn run(client: &Client, job: Job, progress: Arc<Progress>, note: crate
     let set = |t: &str| *note.lock().unwrap() = Some(t.to_string());
     // Joining needs ffmpeg; fetch it now (first time only) if it's missing.
     crate::media::ensure_ffmpeg(client, &note).await?;
-    set("Starting");
+    set("正在启动");
     let video = load(&f, &job.video).await?;
     let audio = match &job.audio {
         Some(a) => Some(load(&f, a).await?),
@@ -493,7 +493,7 @@ pub async fn run(client: &Client, job: Job, progress: Arc<Progress>, note: crate
         return Ok(Outcome::Paused);
     }
 
-    set("Joining");
+    set("正在合并");
     let joined = |tag: &str| -> Result<PathBuf> {
         let out = parts.join(format!("{tag}.joined"));
         let mut w = std::io::BufWriter::new(std::fs::File::create(&out)?);
@@ -533,13 +533,13 @@ async fn finish(video: &Path, audio: Option<&Path>, dest: &Path) -> Result<()> {
             })
             .await??;
             if !out.status.success() {
-                bail!("couldn't join the video: {}", String::from_utf8_lossy(&out.stderr).lines().last().unwrap_or("ffmpeg failed"));
+                bail!("合并视频失败：{}", String::from_utf8_lossy(&out.stderr).lines().last().unwrap_or("ffmpeg 执行失败"));
             }
         }
         None if audio.is_none() => {
             std::fs::rename(video, dest.with_extension("ts"))?;
         }
-        None => bail!("Joining video and audio needs ffmpeg."),
+        None => bail!("合并视频和音频需要 ffmpeg。"),
     }
     Ok(())
 }

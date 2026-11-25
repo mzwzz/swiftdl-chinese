@@ -89,7 +89,7 @@ async function sendToApp({ url, referrer, filename, qualities, pick }) {
       reply = await apiCall("swiftdl.download", [message]);
     }
   }
-  if (!reply?.ok) throw new Error(reply?.error || "SwiftDL did not accept the download");
+  if (!reply?.ok) throw new Error(reply?.error || "SwiftDL 未接受此下载");
 }
 
 const ping = () =>

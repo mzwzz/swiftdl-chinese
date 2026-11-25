@@ -138,7 +138,7 @@ function row(d) {
     : d.status === "waiting" ? `${total ? bytes(total) : "Waiting"} · Waiting`
     : "";
   const sub = d.status === "error" ? `<span class="t err">${esc(d.errorMessage || "Failed")}</span>` : `${bar}<span class="t">${text}</span>`;
-  return `<div class="row ${d.status}" data-g="${d.gid}">${icon(d, pct)}<div class="name"><span class="n" title="${esc(file)}">${esc(file)}</span>${e ? `<span class="tag">${esc(e)}</span>` : ""}</div><div class="acts">${act}<button data-a="remove" title="Remove">${I.trash}</button></div><div class="sub">${sub}</div></div>`;
+  return `<div class="row ${d.status}" data-g="${d.gid}">${icon(d, pct)}<div class="name"><span class="n" title="${esc(file)}">${esc(file)}</span>${e ? `<span class="tag">${esc(e)}</span>` : ""}</div><div class="acts">${act}<button data-a="remove" title="移除">${I.trash}</button></div><div class="sub">${sub}</div></div>`;
 }
 const group = (title, list, right = "") => (list.length ? `<div class="gh"><span>${title}</span><span class="gc">${list.length}</span><span class="gr">${right}</span></div>${list.map(row).join("")}` : "");
 
