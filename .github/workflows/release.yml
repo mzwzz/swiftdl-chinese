@@ -5,8 +5,9 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  # 上游这套多平台构建对汉化版没有意义：汉化包由本地编译后手工上传，
+  # 而 push tag 触发会在同一个 Release 里塞进未定制的安装包。
+  # 因此去掉 push 触发，只保留手动运行（需要时在 Actions 页面点 Run workflow）。
   workflow_dispatch:
     inputs:
       tag:

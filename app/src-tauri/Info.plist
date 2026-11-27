@@ -4,6 +4,22 @@
      links and .torrent files (see src/torrent.rs and the Opened event in main.rs). -->
 <plist version="1.0">
 <dict>
+  <!-- 菜单栏中文：AppKit 自动加的那些项（全部关闭 / 退出并关闭所有窗口 /
+       自动填充 / 听写 / 反馈给 Apple …）跟的是 App 的本地化，声明成中文才不会漏英文。 -->
+  <key>CFBundleDevelopmentRegion</key>
+  <string>zh_CN</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>zh-Hans</string>
+    <string>en</string>
+  </array>
+  <!-- 浏览器触发下载时只弹下载框、不占 Dock（2026-11-12 用户要求）。
+       进程一启动就是 UIElement：否则 AppKit 会在注册成 Foreground app 之后
+       被系统塞进 Dock 的「最近使用的应用程序」，变成第二个一模一样的图标，
+       而且关掉下载框也不消失。正常启动主窗口时由 main.rs 调
+       set_dock_visibility(true) 恢复成普通 App。 -->
+  <key>LSUIElement</key>
+  <true/>
   <key>CFBundleURLTypes</key>
   <array>
     <dict>

@@ -88,7 +88,7 @@ async function sendToApp({ url, referrer, filename, qualities, pick }) {
     await new Promise((r) => setTimeout(r, 800));
     reply = await chrome.runtime.sendNativeMessage(HOST, message);
   }
-  if (!reply?.ok) throw new Error(reply?.error || "SwiftDL did not accept the download");
+  if (!reply?.ok) throw new Error(reply?.error || "SwiftDL 未接受此下载");
 }
 
 const ping = () =>

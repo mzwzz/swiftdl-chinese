@@ -70,7 +70,7 @@ fn parse_domains(p: Provider, body: &str) -> Result<Vec<String>> {
         Provider::Premiumize => strings(&v["directdl"]).collect(),
     };
     if list.is_empty() {
-        bail!("{} sent an empty list of hosts", p.name());
+        bail!("{} 返回了空的服务器列表", p.name());
     }
     Ok(list)
 }
@@ -111,15 +111,15 @@ fn parse_direct(p: Provider, body: &str) -> Result<Direct> {
         Provider::Real => {
             if let Some(err) = v["error"].as_str() {
                 bail!("Real-Debrid: {}", match err {
-                    "bad_token" | "bad_token_" => "the API token isn't valid. Check it in Settings.".to_string(),
-                    "hoster_unavailable" => "that host isn't available right now.".to_string(),
-                    "file_unavailable" => "the file is no longer available.".to_string(),
-                    "premium_only" | "account_locked" | "not_premium" => "the account isn't premium or is locked.".to_string(),
+                    "bad_token" | "bad_token_" => "API 令牌无效，请在设置里检查。".to_string(),
+                    "hoster_unavailable" => "该网盘暂时不可用。".to_string(),
+                    "file_unavailable" => "文件已不可用。".to_string(),
+                    "premium_only" | "account_locked" | "not_premium" => "账号不是高级会员或已被锁定。".to_string(),
                     other => other.replace('_', " "),
                 });
             }
             Ok(Direct {
-                url: v["download"].as_str().context("Real-Debrid gave no download link")?.to_string(),
+                url: v["download"].as_str().context("Real-Debrid 没有返回下载链接")?.to_string(),
                 filename: v["filename"].as_str().unwrap_or("download").to_string(),
                 size: v["filesize"].as_u64(),
             })
@@ -127,23 +127,23 @@ fn parse_direct(p: Provider, body: &str) -> Result<Direct> {
         Provider::All => {
             if v["status"].as_str() != Some("success") {
                 let code = v["error"]["code"].as_str().unwrap_or("");
-                let msg = v["error"]["message"].as_str().unwrap_or("it refused the link");
-                bail!("AllDebrid: {}", if code.starts_with("AUTH_") { "the API key isn't valid. Check it in Settings.".to_string() } else { msg.to_string() });
+                let msg = v["error"]["message"].as_str().unwrap_or("它拒绝了该链接");
+                bail!("AllDebrid: {}", if code.starts_with("AUTH_") { "API 密钥无效，请在设置里检查。".to_string() } else { msg.to_string() });
             }
             let d = &v["data"];
             Ok(Direct {
-                url: d["link"].as_str().context("AllDebrid gave no download link")?.to_string(),
+                url: d["link"].as_str().context("AllDebrid 没有返回下载链接")?.to_string(),
                 filename: d["filename"].as_str().unwrap_or("download").to_string(),
                 size: d["filesize"].as_u64(),
             })
         }
         Provider::Premiumize => {
             if v["status"].as_str() != Some("success") {
-                let msg = v["message"].as_str().unwrap_or("it refused the link");
-                bail!("Premiumize: {}", if v["code"].as_str() == Some("authentication_failed") { "the API key isn't valid. Check it in Settings.".to_string() } else { msg.to_string() });
+                let msg = v["message"].as_str().unwrap_or("它拒绝了该链接");
+                bail!("Premiumize: {}", if v["code"].as_str() == Some("authentication_failed") { "API 密钥无效，请在设置里检查。".to_string() } else { msg.to_string() });
             }
             let first = &v["content"][0];
-            let url = first["link"].as_str().or_else(|| v["location"].as_str()).context("Premiumize gave no download link")?.to_string();
+            let url = first["link"].as_str().or_else(|| v["location"].as_str()).context("Premiumize 没有返回下载链接")?.to_string();
             let name = first["path"].as_str().map(last_part).or_else(|| v["filename"].as_str()).unwrap_or("download").to_string();
             Ok(Direct { url, filename: name, size: first["size"].as_u64().or_else(|| v["filesize"].as_u64()) })
         }

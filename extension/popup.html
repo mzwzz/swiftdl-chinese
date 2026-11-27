@@ -8,30 +8,30 @@
 <body>
   <header>
     <img src="logo.svg" alt="" width="28" height="28">
-    <span class="id"><b>SwiftDL</b><span class="status" id="status"><i></i><span>Checking</span></span></span>
-    <button id="open" class="icon" title="Open SwiftDL">
+    <span class="id"><b>SwiftDL</b><span class="status" id="status"><i></i><span>检查中</span></span></span>
+    <button id="open" class="icon" title="打开 SwiftDL">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
     </button>
   </header>
 
   <main id="main">
     <section id="found" hidden>
-      <div class="label">On this page</div>
+      <div class="label">本页内容</div>
       <div id="media"></div>
     </section>
 
     <label class="row">
-      <span class="txt">Catch downloads</span>
+      <span class="txt">接管下载</span>
       <span class="switch"><input type="checkbox" id="enabled"><i></i></span>
     </label>
     <label class="row" id="site-row">
-      <span class="txt">On <span id="site" class="host"></span></span>
+      <span class="txt">在 <span id="site" class="host"></span> 上</span>
       <span class="switch"><input type="checkbox" id="site-on"><i></i></span>
     </label>
     <label class="row">
-      <span class="txt">Skip files under</span>
+      <span class="txt">小于此大小则跳过</span>
       <span class="select"><select id="min-size">
-        <option value="0">Off</option>
+        <option value="0">关闭</option>
         <option value="512">512 KB</option>
         <option value="1024">1 MB</option>
         <option value="5120">5 MB</option>
@@ -39,19 +39,19 @@
       </select></span>
     </label>
 
-    <p class="hint">Hold <kbd>Alt</kbd> while clicking to download in the browser</p>
+    <p class="hint">按住 <kbd>Alt</kbd> 点击则由浏览器下载</p>
   </main>
 
   <div class="missing" id="missing" hidden>
-    <b>Can't reach SwiftDL</b>
-    <span id="why">Open the app once. If it's already open, restart the browser.</span>
-    <a href="https://github.com/harshsinghsv/swiftdl/releases/latest" target="_blank" class="btn">Download SwiftDL</a>
+    <b>无法连接 SwiftDL</b>
+    <span id="why">先打开一次 App；若已在运行，请重启浏览器。</span>
+    <a href="https://github.com/mzwzz/swiftdl-chinese/releases/latest" target="_blank" class="btn">下载 SwiftDL</a>
     <details id="port">
-      <summary>Connect through a port instead</summary>
-      <p>In SwiftDL, open Settings, switch on Remote control and copy the secret. SwiftDL must be running.</p>
-      <input id="api-port" inputmode="numeric" placeholder="Port (6800)" aria-label="Port">
-      <input id="api-secret" type="password" placeholder="Secret" aria-label="Secret" autocomplete="off">
-      <button id="api-save" class="btn">Save and test</button>
+      <summary>改用本地端口连接</summary>
+      <p>在 SwiftDL 的「设置」里打开「远程控制」并复制密钥，SwiftDL 必须在运行中。</p>
+      <input id="api-port" inputmode="numeric" placeholder="端口（6800）" aria-label="端口">
+      <input id="api-secret" type="password" placeholder="密钥" aria-label="密钥" autocomplete="off">
+      <button id="api-save" class="btn">保存并测试</button>
       <span id="api-msg"></span>
     </details>
   </div>

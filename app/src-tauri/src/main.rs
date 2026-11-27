@@ -4,6 +4,7 @@
 mod browser;
 mod commands;
 mod manager;
+mod menu;
 mod log;
 mod media;
 mod native_host;
@@ -27,10 +28,31 @@ use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent}
 use tauri::{AppHandle, Manager};
 
 pub fn show_main_window(app: &AppHandle) {
+    // macOS: the main window is the app's home, so make sure the Dock icon is
+    // back — a browser handoff launch may have hidden it (see setup).
+    #[cfg(target_os = "macos")]
+    let _ = app.set_dock_visibility(true);
+    // macOS: clicking the tray menu doesn't activate the app; do it here so
+    // the window takes the keyboard like a Dock click would.
+    #[cfg(target_os = "macos")]
+    let _ = app.run_on_main_thread(windows::activate_app);
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
+        // The main window is built hidden and `show` lands async on macOS;
+        // tao's set_focus skips invisible windows, so retry once it shows.
+        let w = w.clone();
+        std::thread::spawn(move || {
+            for _ in 0..5 {
+                std::thread::sleep(std::time::Duration::from_millis(120));
+                if !w.is_visible().unwrap_or(false) {
+                    continue;
+                }
+                let _ = w.set_focus();
+                return;
+            }
+        });
     }
 }
 
@@ -45,9 +67,9 @@ pub fn main_zoom(app: &AppHandle, percent: u32) {
 /// SwiftDL lives in the tray like IDM: closing the main window keeps
 /// downloads (and browser integration) running.
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let open = MenuItem::with_id(app, "open", "Open SwiftDL", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit SwiftDL", true, None::<&str>)?;
-    let nolimit = tauri::menu::CheckMenuItem::with_id(app, "nolimit", "Ignore speed limit", true, false, None::<&str>)?;
+    let open = MenuItem::with_id(app, "open", "打开 SwiftDL", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出 SwiftDL", true, None::<&str>)?;
+    let nolimit = tauri::menu::CheckMenuItem::with_id(app, "nolimit", "忽略限速", true, false, None::<&str>)?;
     let menu = Menu::with_items(app, &[&open, &nolimit, &PredefinedMenuItem::separator(app)?, &quit])?;
     let mut tray = TrayIconBuilder::with_id("main").tooltip("SwiftDL").menu(&menu).show_menu_on_left_click(false);
     if let Some(icon) = app.default_window_icon() {
@@ -84,6 +106,11 @@ fn main() {
     tauri::Builder::default()
         // Must be first: a second launch (e.g. from the extension) hands its
         // args to this window and exits.
+        // macOS 菜单栏全中文（默认菜单是英文的 File / Edit / View / Window / Help）。
+        .menu(|app| menu::build(app))
+        .on_menu_event(|app, event| {
+            menu::handle(app, event.id().as_ref());
+        })
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if let Some(inc) = native_host::parse_prepare_arg(&args) {
                 app.state::<Arc<DownloadManager>>().prepare(&inc);
@@ -113,6 +140,25 @@ fn main() {
                 crate::log::line(&format!("could not offer the browser extension: {e:#}"));
             }
             app.manage(mgr.clone());
+            // macOS: launched by the browser (or by a magnet/.torrent link) only
+            // to show a download window. The tray icon is the app's home, so stay
+            // out of the Dock: a second Dock tile next to the copy the user already
+            // has open reads as "another SwiftDL". The icon comes back as soon as
+            // the main window is asked for — see show_main_window.
+            #[cfg(target_os = "macos")]
+            {
+                let handoff = native_host::parse_prepare_arg(&args).is_some()
+                    || native_host::parse_add_arg(&args).is_some()
+                    || torrent::parse_open_arg(&args).is_some();
+                if handoff {
+                    app.set_dock_visibility(false);
+                } else {
+                    // Info.plist 里声明了 LSUIElement，进程默认是 UIElement；
+                    // 用户自己启动（双击 / 点 Dock）时必须回到普通 App，
+                    // 否则主窗口没有 Dock 图标。
+                    let _ = app.set_dock_visibility(true);
+                }
+            }
             if let Some(main) = app.get_webview_window("main") {
                 windows::polish(&main);
             }
@@ -121,6 +167,18 @@ fn main() {
                 crate::log::line(&format!("tray icon not available: {e:#}"));
             }
             mgr.apply_autostart();
+            // Native appearance follows the saved theme, so vibrancy materials
+            // match from the first frame (CSS alone can't tint them).
+            {
+                let native = match mgr.settings().theme.as_str() {
+                    "dark" => Some(tauri::Theme::Dark),
+                    "light" => Some(tauri::Theme::Light),
+                    _ => None,
+                };
+                for w in app.webview_windows().values() {
+                    let _ = w.set_theme(native);
+                }
+            }
             mgr.start_ticker();
             let api = mgr.settings();
             if api.api_enabled && !api.api_secret.is_empty() {
@@ -181,6 +239,7 @@ fn main() {
             commands::open_extension_folder,
             commands::open_extensions_page,
             commands::open_log,
+            commands::set_theme,
             commands::pick_folder,
             commands::integration_status,
             commands::open_store,
@@ -205,10 +264,34 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("error while starting SwiftDL")
         .run(|_app, _event| {
+            // Dock icon clicked (applicationShouldHandleReopen): the main window
+            // is the app's home. A running download window doesn't count — a
+            // Dock click still means "show me SwiftDL" (and brings the Dock icon
+            // back if a browser handoff had hidden it).
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = _event {
+                let main_hidden = _app
+                    .get_webview_window("main")
+                    .map(|w| !w.is_visible().unwrap_or(false))
+                    .unwrap_or(true);
+                if main_hidden {
+                    show_main_window(_app);
+                }
+            }
             // macOS hands over magnet links and .torrent files as an event,
             // not as arguments.
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = _event {
+                // Opened at launch (nothing visible yet): same tray-only
+                // treatment as a browser handoff, so only the download window
+                // shows up and the Dock stays quiet.
+                let nothing_visible = _app
+                    .webview_windows()
+                    .values()
+                    .all(|w| !w.is_visible().unwrap_or(false));
+                if nothing_visible {
+                    let _ = _app.set_dock_visibility(false);
+                }
                 for url in urls {
                     let link = if url.scheme() == "file" {
                         url.to_file_path().ok().map(|p| p.to_string_lossy().into_owned())

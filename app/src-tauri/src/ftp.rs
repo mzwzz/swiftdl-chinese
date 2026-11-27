@@ -30,7 +30,7 @@ fn parse(url: &str) -> Result<Target> {
     let path = decode(u.path());
     let name = path.rsplit('/').find(|p| !p.is_empty()).unwrap_or("").to_string();
     if name.is_empty() {
-        bail!("the address doesn't point to a file");
+        bail!("该地址指向的不是文件");
     }
     Ok(Target {
         addr: format!("{host}:{}", u.port().unwrap_or(21)),
@@ -113,7 +113,7 @@ fn download(url: &str, dest: &Path, progress: &Progress, cancel: &CancellationTo
     drop(file);
     let got = std::fs::metadata(&part)?.len();
     if got != total {
-        bail!("the server stopped early ({got} of {total} bytes). Retry to carry on.");
+        bail!("服务器提前断开（{got} / {total} 字节）。重试可继续。");
     }
     std::fs::rename(&part, dest)?;
     Ok(Outcome::Completed)
